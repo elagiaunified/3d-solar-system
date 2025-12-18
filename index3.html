@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Explorer - Interactive 3D Space Education</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+        }
+
+        #canvas {
+            display: block;
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        /* UI Panels */
+        .ui-panel {
+            position: absolute;
+            background: rgba(0, 10, 30, 0.9);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #controls {
+            top: 20px;
+            left: 20px;
+            width: 280px;
+        }
+
+        #info-panel {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #bottom-controls {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        #measurement-panel {
+            bottom: 120px;
+            left: 20px;
+            width: 280px;
+        }
+
+        #quiz-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            display: none;
+            z-index: 1000;
+            background: rgba(0, 20, 50, 0.95);
+        }
+
+        /* Headings */
+        h2 {
+            color: #4a9eff;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid rgba(74, 158, 255, 0.3);
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            color: #6bb6ff;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        /* Controls */
+        .control-group {
+            margin: 15px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #8fc7ff;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 20, 50, 0.8);
+            color: white;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+
+        /* Info Display */
+        .info-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            border-left: 3px solid #4a9eff;
+        }
+
+        .info-label {
+            color: #8fc7ff;
+            font-size: 0.85em;
+            display: inline-block;
+            width: 120px;
+        }
+
+        .info-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Speed Indicator */
+        #speed-indicator {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .speed-display {
+            font-size: 1.5em;
+            color: #4a9eff;
+            font-weight: bold;
+        }
+
+        /* Loading Screen */
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #0a1929 0%, #000 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(74, 158, 255, 0.3);
+            border-top: 3px solid #4a9eff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Quiz Styles */
+        .quiz-question {
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+
+        .quiz-options {
+            margin: 20px 0;
+        }
+
+        .quiz-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            transition: all 0.3s;
+        }
+
+        .quiz-option:hover {
+            background: rgba(74, 158, 255, 0.2);
+            border-color: #4a9eff;
+        }
+
+        .quiz-score {
+            text-align: center;
+            font-size: 1.3em;
+            color: #4a9eff;
+            margin: 20px 0;
+        }
+
+        /* Tooltips */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 20, 50, 0.95);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+            max-width: 250px;
+        }
+
+        /* Distance Line */
+        #distance-display {
+            position: absolute;
+            background: rgba(0, 20, 50, 0.95);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(100, 150, 255, 0.5);
+            display: none;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(74, 158, 255, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(74, 158, 255, 0.7);
+        }
+
+        /* Habitable Zone Indicator */
+        .habitable-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .habitable {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+
+        .not-habitable {
+            background: #f44336;
+            box-shadow: 0 0 10px #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Navigation Help */
+        #nav-help {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 20, 50, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            font-size: 0.85em;
+        }
+
+        .help-item {
+            margin: 5px 0;
+        }
+
+        .key {
+            display: inline-block;
+            background: rgba(74, 158, 255, 0.3);
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h1>Loading Solar System Explorer...</h1>
+            <p>Preparing your journey through space</p>
+        </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <canvas id="canvas"></canvas>
+
+    <!-- Control Panel -->
+    <div id="controls" class="ui-panel">
+        <h2>🚀 Navigation Controls</h2>
+        
+        <div class="control-group">
+            <label for="planet-select">Focus on Planet:</label>
+            <select id="planet-select">
+                <option value="">Free Camera</option>
+                <option value="sun">☀️ Sun</option>
+                <option value="mercury">☿ Mercury</option>
+                <option value="venus">♀ Venus</option>
+                <option value="earth">🌍 Earth</option>
+                <option value="mars">♂ Mars</option>
+                <option value="jupiter">♃ Jupiter</option>
+                <option value="saturn">♄ Saturn</option>
+                <option value="uranus">♅ Uranus</option>
+                <option value="neptune">♆ Neptune</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="zoom-slider">Zoom Level:</label>
+            <input type="range" id="zoom-slider" min="1" max="100" value="50">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="show-orbits" checked> Show Orbits
+            </label>
+            <label>
+                <input type="checkbox" id="show-labels" checked> Show Labels
+            </label>
+            <label>
+                <input type="checkbox" id="show-grid"> Show Grid
+            </label>
+            <label>
+                <input type="checkbox" id="show-habitable" checked> Habitable Zone
+            </label>
+            <label>
+                <input type="checkbox" id="show-lagrange"> Lagrange Points
+            </label>
+        </div>
+
+        <div class="control-group">
+            <button id="reset-view">Reset View</button>
+            <button id="toggle-pause">Pause</button>
+        </div>
+
+        <div id="speed-indicator">
+            <div>Time Speed</div>
+            <div class="speed-display">1x</div>
+            <input type="range" id="speed-slider" min="-50" max="50" value="1">
+        </div>
+    </div>
+
+    <!-- Information Panel -->
+    <div id="info-panel" class="ui-panel">
+        <h2>📊 Planetary Information</h2>
+        <div id="planet-info">
+            <p>Select a planet to view detailed information</p>
+        </div>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div id="bottom-controls" class="ui-panel">
+        <button id="measure-tool">📏 Measure Distance</button>
+        <button id="predict-orbit">🔮 Predict Orbit</button>
+        <button id="time-travel">⏰ Time Travel</button>
+        <button id="start-quiz">🎯 Quiz Challenge</button>
+        <button id="screenshot">📸 Screenshot</button>
+    </div>
+
+    <!-- Measurement Panel -->
+    <div id="measurement-panel" class="ui-panel" style="display: none;">
+        <h3>📏 Measurement Tool</h3>
+        <div id="measurement-info">
+            <p>Click on two objects to measure distance</p>
+        </div>
+    </div>
+
+    <!-- Quiz Panel -->
+    <div id="quiz-panel" class="ui-panel">
+        <h2>🎯 Solar System Quiz</h2>
+        <div id="quiz-content"></div>
+        <button id="close-quiz">Close</button>
+    </div>
+
+    <!-- Navigation Help -->
+    <div id="nav-help" class="ui-panel">
+        <h3>🎮 Controls</h3>
+        <div class="help-item"><span class="key">Left Click</span> Rotate View</div>
+        <div class="help-item"><span class="key">Right Click</span> Pan View</div>
+        <div class="help-item"><span class="key">Scroll</span> Zoom In/Out</div>
+        <div class="help-item"><span class="key">Double Click</span> Focus Planet</div>
+        <div class="help-item"><span class="key">Space</span> Pause/Resume</div>
+    </div>
+
+    <!-- Distance Display Tooltip -->
+    <div id="distance-display"></div>
+
+    <script>
+        // Solar System Explorer - Complete Implementation
+        class SolarSystemExplorer {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.setupCanvas();
+                
+                // Camera and view properties
+                this.camera = {
+                    x: 0,
+                    y: 0,
+                    zoom: 0.5,
+                    targetZoom: 0.5,
+                    rotation: 0,
+                    following: null
+                };
+
+                // Time and animation
+                this.time = Date.now();
+                this.timeSpeed = 1;
+                this.paused = false;
+                this.startDate = new Date();
+                
+                // Interaction states
+                this.mouse = { x: 0, y: 0, down: false, button: 0 };
+                                this.lastMouse = { x: 0, y: 0 };
+                this.hoveredPlanet = null;
+                this.selectedPlanet = null;
+                this.measureMode = false;
+                this.measureStart = null;
+                this.measureEnd = null;
+                
+                // Display options
+                this.showOrbits = true;
+                this.showLabels = true;
+                this.showGrid = false;
+                this.showHabitable = true;
+                this.showLagrange = false;
+                
+                // Solar System Data
+                this.initializeSolarSystem();
+                this.initializeQuizData();
+                
+                // Initialize controls and start
+                this.setupEventListeners();
+                this.hideLoading();
+                this.animate();
+            }
+            
+            setupCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                
+                window.addEventListener('resize', () => {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                });
+            }
+            
+            initializeSolarSystem() {
+                // Astronomical Unit in pixels (scaled for display)
+                this.AU = 150; // 1 AU = 150 pixels at zoom 1
+                
+                // Solar system objects with realistic data
+                this.celestialBodies = {
+                    sun: {
+                        name: 'Sun',
+                        radius: 20,
+                        color: '#FDB813',
+                        mass: 1989000e24, // kg
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        type: 'star',
+                        temperature: 5778, // K
+                        composition: 'Hydrogen 73%, Helium 25%, Other 2%',
+                        info: 'The star at the center of our Solar System'
+                    },
+                    mercury: {
+                        name: 'Mercury',
+                        radius: 4,
+                        color: '#8C7853',
+                        mass: 0.330e24,
+                        orbitalRadius: 0.387 * this.AU,
+                        orbitalPeriod: 88,
+                        eccentricity: 0.206,
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        angle: Math.random() * Math.PI * 2,
+                        type: 'terrestrial',
+                        diameter: 4879, // km
+                        dayLength: 58.6, // Earth days
+                        moons: 0,
+                        temperature: { min: -173, max: 427 }, // Celsius
+                        atmosphere: 'Trace oxygen, sodium, hydrogen',
+                        composition: 'Iron core 75%, Rocky mantle 25%',
+                        habitable: false,
+                        distanceFromSun: 57.9e6, // km
+                        info: 'Smallest planet, closest to the Sun'
+                    },
+                    venus: {
+                        name: 'Venus',
+                        radius: 7,
+                        color: '#FFC649',
+                        mass: 4.87e24,
+                        orbitalRadius: 0.723 * this.AU,
+                        orbitalPeriod: 225,
+                        eccentricity: 0.007,
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        angle: Math.random() * Math.PI * 2,
+                        type: 'terrestrial',
+                        diameter: 12104,
+                        dayLength: 243,
+                        moons: 0,
+                        temperature: { min: 462, max: 462 },
+                        atmosphere: 'Carbon dioxide 96%, Nitrogen 3%',
+                        composition: 'Iron core, rocky mantle, silicate crust',
+                        habitable: false,
+                        distanceFromSun: 108.2e6,
+                        info: 'Hottest planet due to greenhouse effect'
+                    },
+                    earth: {
+                        name: 'Earth',
+                        radius: 8,
+                        color: '#4A90E2',
+                        mass: 5.97e24,
+                        orbitalRadius: 1.0 * this.AU,
+                        orbitalPeriod: 365.25,
+                        eccentricity: 0.017,
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        angle: Math.random() * Math.PI * 2,
+                        type: 'terrestrial',
+                        diameter: 12756,
+                        dayLength: 1,
+                        moons: 1,
+                        temperature: { min: -88, max: 58 },
+                        atmosphere: 'Nitrogen 78%, Oxygen 21%, Other 1%',
+                        composition: 'Iron core 32%, Mantle 68%, Water surface 71%',
+                        habitable: true,
+                        distanceFromSun: 149.6e6,
+                        info: 'Our home planet, only known planet with life'
+                    },
+                    mars: {
+                        name: 'Mars',
+                        radius: 5,
+                        color: '#CD5C5C',
+                        mass: 0.642e24,
+                        orbitalRadius: 1.524 * this.AU,
+                        orbitalPeriod: 687,
+                        eccentricity: 0.093,
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        angle: Math.random() * Math.PI * 2,
+                        type: 'terrestrial',
+                        diameter: 6792,
+                        dayLength: 1.03,
+                        moons: 2,
+                        temperature: { min: -143, max: 35 },
+                        atmosphere: 'Carbon dioxide 95%, Nitrogen 3%, Argon 2%',
+                        composition: 'Iron oxide surface, basaltic rock, iron core',
+                        habitable: false,
+                        distanceFromSun: 227.9e6,
+                        info: 'The Red Planet, potential for future colonization'
+                    },
+                    jupiter: {
+                        name: 'Jupiter',
+                        radius: 18,
+                        color: '#C88B3A',
+                        mass: 1898e24,
+                        orbitalRadius: 5.203 * this.AU,
+                        orbitalPeriod: 4333,
+                        eccentricity: 0.048,
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        angle: Math.random() * Math.PI * 2,
+                        type: 'gas giant',
+                        diameter: 142984,
+                        dayLength: 0.41,
+                        moons: 79,
+                        temperature: { min: -145, max: -145 },
+                        atmosphere: 'Hydrogen 90%, Helium 10%',
+                        composition: 'Gas atmosphere, liquid hydrogen mantle, rocky core',
+                        habitable: false,
+                        distanceFromSun: 778.5e6,
+                        info: 'Largest planet, has Great Red Spot storm'
+                    },
+                    saturn: {
+                        name: 'Saturn',
+                        radius: 15,
+                        color: '#FAD5A5',
+                        mass: 568e24,
+                        orbitalRadius: 9.537 * this.AU,
+                        orbitalPeriod: 10759,
+                        eccentricity: 0.054,
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        angle: Math.random() * Math.PI * 2,
+                        type: 'gas giant',
+                        diameter: 120536,
+                        dayLength: 0.45,
+                        moons: 82,
+                        temperature: { min: -178, max: -178 },
+                        atmosphere: 'Hydrogen 96%, Helium 3%',
+                        composition: 'Gas atmosphere, liquid hydrogen, rocky core',
+                        habitable: false,
+                        distanceFromSun: 1432e6,
+                        hasRings: true,
+                        info: 'Famous for its spectacular ring system'
+                    },
+                    uranus: {
+                        name: 'Uranus',
+                        radius: 10,
+                        color: '#4FD0E7',
+                        mass: 86.8e24,
+                        orbitalRadius: 19.191 * this.AU,
+                        orbitalPeriod: 30687,
+                        eccentricity: 0.047,
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        angle: Math.random() * Math.PI * 2,
+                        type: 'ice giant',
+                        diameter: 51118,
+                        dayLength: 0.72,
+                        moons: 27,
+                        temperature: { min: -224, max: -224 },
+                        atmosphere: 'Hydrogen 83%, Helium 15%, Methane 2%',
+                        composition: 'Water, methane, and ammonia ices',
+                        habitable: false,
+                        distanceFromSun: 2867e6,
+                        info: 'Tilted on its side, rotates horizontally'
+                    },
+                    neptune: {
+                        name: 'Neptune',
+                        radius: 10,
+                        color: '#4169E1',
+                        mass: 102e24,
+                        orbitalRadius: 30.069 * this.AU,
+                        orbitalPeriod: 60190,
+                        eccentricity: 0.009,
+                        position: { x: 0, y: 0 },
+                        velocity: { x: 0, y: 0 },
+                        angle: Math.random() * Math.PI * 2,
+                        type: 'ice giant',
+                        diameter: 49528,
+                        dayLength: 0.67,
+                        moons: 14,
+                        temperature: { min: -214, max: -214 },
+                        atmosphere: 'Hydrogen 80%, Helium 19%, Methane 1%',
+                        composition: 'Water, methane, and ammonia ices',
+                        habitable: false,
+                        distanceFromSun: 4515e6,
+                        info: 'Windiest planet with speeds up to 2100 km/h'
+                    }
+                };
+                
+                // Initialize positions
+                this.updatePlanetPositions(0);
+            }
+            
+            initializeQuizData() {
+                this.quizQuestions = [
+                    {
+                        question: "Which planet is known as the Red Planet?",
+                        options: ["Venus", "Mars", "Jupiter", "Saturn"],
+                        correct: 1,
+                        explanation: "Mars appears red due to iron oxide on its surface."
+                    },
+                    {
+                        question: "What is the largest planet in our solar system?",
+                        options: ["Saturn", "Neptune", "Jupiter", "Uranus"],
+                        correct: 2,
+                        explanation: "Jupiter is the largest planet with a diameter of 142,984 km."
+                    },
+                    {
+                        question: "Which planet has the most moons?",
+                        options: ["Jupiter", "Saturn", "Uranus", "Neptune"],
+                        correct: 1,
+                        explanation: "Saturn has 82 confirmed moons, slightly more than Jupiter's 79."
+                    },
+                    {
+                        question: "What is the habitable zone?",
+                        options: [
+                            "Region where spacecraft can safely travel",
+                            "Area where liquid water can exist on a planet's surface",
+                            "Zone with breathable atmosphere",
+                            "Region protected from asteroids"
+                        ],
+                        correct: 1,
+                        explanation: "The habitable zone is the distance from a star where liquid water could exist."
+                    },
+                    {
+                        question: "Which planet rotates on its side?",
+                        options: ["Mercury", "Venus", "Uranus", "Neptune"],
+                        correct: 2,
+                        explanation: "Uranus has an axial tilt of about 98 degrees."
+                    },
+                    {
+                        question: "What are Lagrange points?",
+                        options: [
+                            "Points where gravity is zero",
+                            "Positions where gravitational forces balance",
+                            "Asteroid impact sites",
+                            "Planetary poles"
+                        ],
+                        correct: 1,
+                        explanation: "Lagrange points are positions where gravitational forces of two bodies balance."
+                    },
+                    {
+                        question: "Which planet has the shortest day?",
+                        options: ["Mercury", "Earth", "Jupiter", "Mars"],
+                        correct: 2,
+                        explanation: "Jupiter rotates once every 9.9 hours, the fastest of all planets."
+                    },
+                    {
+                        question: "What is the approximate temperature of the Sun's surface?",
+                        options: ["1,000 K", "5,778 K", "10,000 K", "20,000 K"],
+                        correct: 1,
+                        explanation: "The Sun's surface temperature is approximately 5,778 Kelvin."
+                    }
+                ];
+                
+                this.currentQuiz = null;
+                this.quizScore = 0;
+            }
+            
+            updatePlanetPositions(deltaTime) {
+                const timeScale = deltaTime * this.timeSpeed * 0.001;
+                
+                for (const [key, body] of Object.entries(this.celestialBodies)) {
+                    if (body.orbitalRadius) {
+                        // Update angle based on orbital period
+                        body.angle += (2 * Math.PI / body.orbitalPeriod) * timeScale;
+                        
+                        // Calculate position with eccentricity
+                        const a = body.orbitalRadius;
+                        const e = body.eccentricity;
+                        const r = a * (1 - e * e) / (1 + e * Math.cos(body.angle));
+                        
+                        body.position.x = r * Math.cos(body.angle);
+                        body.position.y = r * Math.sin(body.angle);
+                        
+                        // Calculate velocity for gravity visualization
+                        const speed = Math.sqrt((2 * Math.PI * a) / body.orbitalPeriod);
+                        body.velocity.x = -speed * Math.sin(body.angle);
+                        body.velocity.y = speed * Math.cos(body.angle);
+                    }
+                }
+            }
+            
+            animate() {
+                const now = Date.now();
+                const deltaTime = now - this.time;
+                this.time = now;
+                
+                if (!this.paused) {
+                    this.updatePlanetPositions(deltaTime);
+                }
+                
+                this.updateCamera();
+                this.render();
+                
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            updateCamera() {
+                // Smooth zoom
+                this.camera.zoom += (this.camera.targetZoom - this.camera.zoom) * 0.1;
+                
+                // Follow selected planet
+                if (this.camera.following && this.celestialBodies[this.camera.following]) {
+                    const target = this.celestialBodies[this.camera.following];
+                    this.camera.x += (target.position.x - this.camera.x) * 0.1;
+                    this.camera.y += (target.position.y - this.camera.y) * 0.1;
+                }
+            }
+            
+            render() {
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                          render() {
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                
+                // Clear and setup background
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, width, height);
+                
+                // Draw stars background
+                this.drawStars(ctx, width, height);
+                
+                // Save context and apply camera transform
+                ctx.save();
+                ctx.translate(width / 2, height / 2);
+                ctx.scale(this.camera.zoom, this.camera.zoom);
+                ctx.translate(-this.camera.x, -this.camera.y);
+                
+                // Draw grid if enabled
+                if (this.showGrid) {
+                    this.drawGrid(ctx);
+                }
+                
+                // Draw habitable zone
+                if (this.showHabitable) {
+                    this.drawHabitableZone(ctx);
+                }
+                
+                // Draw orbits
+                if (this.showOrbits) {
+                    this.drawOrbits(ctx);
+                }
+                
+                // Draw celestial bodies
+                this.drawCelestialBodies(ctx);
+                
+                // Draw Lagrange points if enabled
+                if (this.showLagrange && this.selectedPlanet) {
+                    this.drawLagrangePoints(ctx);
+                }
+                
+                // Draw measurement line if active
+                if (this.measureMode && this.measureStart) {
+                    this.drawMeasurementLine(ctx);
+                }
+                
+                ctx.restore();
+                
+                // Draw labels (screen space)
+                if (this.showLabels) {
+                    this.drawLabels(ctx, width, height);
+                }
+            }
+            
+            drawStars(ctx, width, height) {
+                if (!this.stars) {
+                    this.stars = [];
+                    for (let i = 0; i < 200; i++) {
+                        this.stars.push({
+                            x: Math.random() * width,
+                            y: Math.random() * height,
+                            size: Math.random() * 2,
+                            brightness: Math.random()
+                        });
+                    }
+                }
+                
+                ctx.fillStyle = '#fff';
+                this.stars.forEach(star => {
+                    ctx.globalAlpha = star.brightness * 0.8;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+            }
+            
+            drawGrid(ctx) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                const gridSize = this.AU;
+                const range = 40;
+                
+                for (let i = -range; i <= range; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * gridSize, -range * gridSize);
+                    ctx.lineTo(i * gridSize, range * gridSize);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(-range * gridSize, i * gridSize);
+                    ctx.lineTo(range * gridSize, i * gridSize);
+                    ctx.stroke();
+                }
+            }
+            
+            drawHabitableZone(ctx) {
+                ctx.fillStyle = 'rgba(0, 255, 100, 0.05)';
+                ctx.strokeStyle = 'rgba(0, 255, 100, 0.2)';
+                ctx.lineWidth = 2;
+                
+                // Inner and outer bounds of habitable zone (roughly Venus to Mars)
+                const innerRadius = 0.75 * this.AU;
+                const outerRadius = 1.5 * this.AU;
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, innerRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Fill between circles
+                ctx.globalCompositeOperation = 'screen';
+                ctx.beginPath();
+                ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+            }
+            
+            drawOrbits(ctx) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1;
+                
+                for (const [key, body] of Object.entries(this.celestialBodies)) {
+                    if (body.orbitalRadius) {
+                        ctx.beginPath();
+                        if (body.eccentricity > 0.05) {
+                            // Draw elliptical orbit
+                            const a = body.orbitalRadius;
+                            const e = body.eccentricity;
+                            const b = a * Math.sqrt(1 - e * e);
+                            ctx.ellipse(-a * e, 0, a, b, 0, 0, Math.PI * 2);
+                        } else {
+                            // Draw circular orbit
+                            ctx.arc(0, 0, body.orbitalRadius, 0, Math.PI * 2);
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            drawCelestialBodies(ctx) {
+                for (const [key, body] of Object.entries(this.celestialBodies)) {
+                    ctx.save();
+                    ctx.translate(body.position.x, body.position.y);
+                    
+                    // Draw glow effect
+                    if (body.type === 'star') {
+                        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, body.radius * 3);
+                        gradient.addColorStop(0, body.color);
+                        gradient.addColorStop(0.3, body.color + '88');
+                        gradient.addColorStop(1, 'transparent');
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, body.radius * 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    // Draw planet/star
+                    ctx.fillStyle = body.color;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, body.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Draw rings for Saturn
+                    if (body.hasRings) {
+                        ctx.strokeStyle = 'rgba(255, 215, 160, 0.6)';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, body.radius * 2, body.radius * 0.8, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    
+                    // Highlight selected planet
+                    if (this.selectedPlanet === key) {
+                        ctx.strokeStyle = '#4a9eff';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, body.radius + 5, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    
+                    ctx.restore();
+                }
+            }
+            
+            drawLagrangePoints(ctx) {
+                if (!this.selectedPlanet || this.selectedPlanet === 'sun') return;
+                
+                const planet = this.celestialBodies[this.selectedPlanet];
+                const sun = this.celestialBodies.sun;
+                
+                // Calculate L1-L5 points
+                const distance = Math.sqrt(
+                    Math.pow(planet.position.x - sun.position.x, 2) +
+                    Math.pow(planet.position.y - sun.position.y, 2)
+                );
+                
+                const angle = Math.atan2(
+                    planet.position.y - sun.position.y,
+                    planet.position.x - sun.position.x
+                );
+                
+                // L1: Between sun and planet
+                const l1 = {
+                    x: sun.position.x + distance * 0.85 * Math.cos(angle),
+                    y: sun.position.y + distance * 0.85 * Math.sin(angle)
+                };
+                
+                // L2: Beyond planet
+                const l2 = {
+                    x: sun.position.x + distance * 1.15 * Math.cos(angle),
+                    y: sun.position.y + distance * 1.15 * Math.sin(angle)
+                };
+                
+                // L3: Opposite side of sun
+                const l3 = {
+                    x: sun.position.x - distance * Math.cos(angle),
+                    y: sun.position.y - distance * Math.sin(angle)
+                };
+                
+                // L4 and L5: 60 degrees ahead and behind
+                const l4 = {
+                    x: sun.position.x + distance * Math.cos(angle + Math.PI / 3),
+                    y: sun.position.y + distance * Math.sin(angle + Math.PI / 3)
+                };
+                
+                const l5 = {
+                    x: sun.position.x + distance * Math.cos(angle - Math.PI / 3),
+                    y: sun.position.y + distance * Math.sin(angle - Math.PI / 3)
+                };
+                
+                // Draw Lagrange points
+                const points = [l1, l2, l3, l4, l5];
+                const labels = ['L1', 'L2', 'L3', 'L4', 'L5'];
+                
+                ctx.fillStyle = 'rgba(255, 100, 255, 0.8)';
+                ctx.font = '12px Arial';
+                
+                points.forEach((point, i) => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillText(labels[i], point.x + 5, point.y - 5);
+                });
+            }
+            
+            drawMeasurementLine(ctx) {
+                if (!this.measureStart || !this.measureEnd) return;
+                
+                ctx.strokeStyle = '#4a9eff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                
+                ctx.beginPath();
+                ctx.moveTo(this.measureStart.x, this.measureStart.y);
+                ctx.lineTo(this.measureEnd.x, this.measureEnd.y);
+                ctx.stroke();
+                
+                ctx.setLineDash([]);
+            }
+            
+            drawLabels(ctx, width, height) {
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                
+                for (const [key, body] of Object.entries(this.celestialBodies)) {
+                    const screenPos = this.worldToScreen(body.position.x, body.position.y);
+                    
+                    if (screenPos.x > 0 && screenPos.x < width && 
+                        screenPos.y > 0 && screenPos.y < height) {
+                        ctx.fillText(body.name, screenPos.x, screenPos.y - body.radius * this.camera.zoom - 10);
+                    }
+                }
+            }
+            
+            worldToScreen(x, y) {
+                return {
+                    x: (x - this.camera.x) * this.camera.zoom + this.canvas.width / 2,
+                    y: (y - this.camera.y) * this.camera.zoom + this.canvas.height / 2
+                };
+            }
+            
+            screenToWorld(x, y) {
+                return {
+                    x: (x - this.canvas.width / 2) / this.camera.zoom + this.camera.x,
+                    y: (y - this.canvas.height / 2) / this.camera.zoom + this.camera.y
+                };
+            }
+            
+            setupEventListeners() {
+                // Mouse events
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+                this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
+                this.canvas.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
+                this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+                
+                // Keyboard events
+                document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                
+                // UI Controls
+                document.getElementById('planet-select').addEventListener('change', (e) => {
+                    this.camera.following = e.target.value;
+                    if (e.target.value) {
+                        this.selectedPlanet = e.target.value;
+                        this.showPlanetInfo(e.target.value);
+                    }
+                });
+                
+                document.getElementById('zoom-slider').addEventListener('input', (e) => {
+                    this.camera.targetZoom = e.target.value / 50;
+                });
+                
+                document.getElementById('speed-slider').addEventListener('input', (e) => {
+                    this.timeSpeed = Math.pow(2, e.target.value / 10);
+                    document.querySelector('.speed-display').textContent = 
+                        this.timeSpeed.toFixed(1) + 'x';
+                });
+                
+                document.getElementById('show-orbits').addEventListener('change', (e) => {
+                    this.showOrbits = e.target.checked;
+                });
+                
+                document.getElementById('show-labels').addEventListener('change', (e) => {
+                    this.showLabels = e.target.checked;
+                });
+                
+                document.getElementById('show-grid').addEventListener('change', (e) => {
+                    this.showGrid = e.target.checked;
+                });
+                
+                document.getElementById('show-habitable').addEventListener('change', (e) => {
+                    this.showHabitable = e.target.checked;
+                });
+                
+                document.getElementById('show-lagrange').addEventListener('change', (e) => {
+                    this.showLagrange = e.target.checked;
+                });
+                
+                document.getElementById('reset-view').addEventListener('click', () => {
+                    this.camera.x = 0;
+                    this.camera.y = 0;
+                    this.camera.targetZoom = 0.5;
+                    this.camera.following = null;
+                    document.getElementById('planet-select').value = '';
+                });
+                
+                document.getElementById('toggle-pause').addEventListener('click', () => {
+                    this.paused = !this.paused;
+                    document.getElementById('toggle-pause').textContent = 
+                        this.paused ? 'Resume' : 'Pause';
+                });
+                
+                document.getElementById('measure-tool').addEventListener('click', () => {
+                    this.measureMode = !this.measureMode;
+                    this.measureStart = null;
+                    this.measureEnd = null;
+                    document.getElementById('measurement-panel').style.display = 
+                        this.measureMode ? 'block' : 'none';
+                });
+                
+                document.getElementById('start-quiz').addEventListener('click', () => {
+                    this.startQuiz();
+                });
+                
+                document.getElementById('close-quiz').addEventListener('click', () => {
+                    document.getElementById('quiz-panel').style.display = 'none';
+                });
+            }
+            
+                        handleMouseDown(e) {
+                this.mouse.down = true;
+                this.mouse.button = e.button;
+                this.lastMouse.x = e.clientX;
+                this.lastMouse.y = e.clientY;
+                
+                if (this.measureMode) {
+                    const worldPos = this.screenToWorld(e.clientX, e.clientY);
+                    const planet = this.getPlanetAtPosition(worldPos);
+                    
+                    if (planet) {
+                        if (!this.measureStart) {
+                            this.measureStart = this.celestialBodies[planet].position;
+                            this.measureStartName = planet;
+                        } else {
+                            this.measureEnd = this.celestialBodies[planet].position;
+                            this.measureEndName = planet;
+                            this.showMeasurement();
+                        }
+                    }
+                }
+            }
+            
+            handleMouseMove(e) {
+                this.mouse.x = e.clientX;
+                this.mouse.y = e.clientY;
+                
+                if (this.mouse.down) {
+                    const dx = e.clientX - this.lastMouse.x;
+                    const dy = e.clientY - this.lastMouse.y;
+                    
+                    if (this.mouse.button === 0) { // Left click - rotate
+                        this.camera.rotation += dx * 0.01;
+                    } else if (this.mouse.button === 2) { // Right click - pan
+                        this.camera.x -= dx / this.camera.zoom;
+                        this.camera.y -= dy / this.camera.zoom;
+                        this.camera.following = null;
+                        document.getElementById('planet-select').value = '';
+                    }
+                    
+                    this.lastMouse.x = e.clientX;
+                    this.lastMouse.y = e.clientY;
+                }
+                
+                // Update hover state
+                const worldPos = this.screenToWorld(e.clientX, e.clientY);
+                this.hoveredPlanet = this.getPlanetAtPosition(worldPos);
+                
+                if (this.measureMode && this.measureStart && !this.measureEnd) {
+                    this.measureEnd = worldPos;
+                }
+            }
+            
+            handleMouseUp(e) {
+                this.mouse.down = false;
+            }
+            
+            handleWheel(e) {
+                e.preventDefault();
+                const zoomSpeed = 0.001;
+                this.camera.targetZoom *= 1 - e.deltaY * zoomSpeed;
+                this.camera.targetZoom = Math.max(0.1, Math.min(5, this.camera.targetZoom));
+                document.getElementById('zoom-slider').value = this.camera.targetZoom * 50;
+            }
+            
+            handleDoubleClick(e) {
+                const worldPos = this.screenToWorld(e.clientX, e.clientY);
+                const planet = this.getPlanetAtPosition(worldPos);
+                
+                if (planet) {
+                    this.camera.following = planet;
+                    this.selectedPlanet = planet;
+                    document.getElementById('planet-select').value = planet;
+                    this.showPlanetInfo(planet);
+                }
+            }
+            
+            handleKeyDown(e) {
+                switch(e.key) {
+                    case ' ':
+                        e.preventDefault();
+                        this.paused = !this.paused;
+                        document.getElementById('toggle-pause').textContent = 
+                            this.paused ? 'Resume' : 'Pause';
+                        break;
+                    case 'g':
+                        this.showGrid = !this.showGrid;
+                        document.getElementById('show-grid').checked = this.showGrid;
+                        break;
+                    case 'o':
+                        this.showOrbits = !this.showOrbits;
+                        document.getElementById('show-orbits').checked = this.showOrbits;
+                        break;
+                    case 'l':
+                        this.showLabels = !this.showLabels;
+                        document.getElementById('show-labels').checked = this.showLabels;
+                        break;
+                }
+            }
+            
+            getPlanetAtPosition(pos) {
+                for (const [key, body] of Object.entries(this.celestialBodies)) {
+                    const distance = Math.sqrt(
+                        Math.pow(pos.x - body.position.x, 2) +
+                        Math.pow(pos.y - body.position.y, 2)
+                    );
+                    
+                    if (distance < body.radius + 5) {
+                        return key;
+                    }
+                }
+                return null;
+            }
+            
+            showPlanetInfo(planetKey) {
+                const planet = this.celestialBodies[planetKey];
+                if (!planet) return;
+                
+                const habitableIcon = planet.habitable ? 
+                    '<span class="habitable-indicator habitable"></span>' : 
+                    '<span class="habitable-indicator not-habitable"></span>';
+                
+                let html = `
+                    <h3>${planet.name} ${habitableIcon}</h3>
+                    <div class="info-item">
+                        <span class="info-label">Type:</span>
+                        <span class="info-value">${planet.type || 'N/A'}</span>
+                    </div>
+                `;
+                
+                if (planet.diameter) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Diameter:</span>
+                            <span class="info-value">${planet.diameter.toLocaleString()} km</span>
+                        </div>
+                    `;
+                }
+                
+                if (planet.distanceFromSun) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Distance from Sun:</span>
+                            <span class="info-value">${(planet.distanceFromSun / 1e6).toFixed(1)} million km</span>
+                        </div>
+                    `;
+                }
+                
+                if (planet.orbitalPeriod) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Orbital Period:</span>
+                            <span class="info-value">${planet.orbitalPeriod} Earth days</span>
+                        </div>
+                    `;
+                }
+                
+                if (planet.dayLength !== undefined) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Day Length:</span>
+                            <span class="info-value">${planet.dayLength} Earth days</span>
+                        </div>
+                    `;
+                }
+                
+                if (planet.moons !== undefined) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Moons:</span>
+                            <span class="info-value">${planet.moons}</span>
+                        </div>
+                    `;
+                }
+                
+                if (planet.temperature) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Temperature:</span>
+                            <span class="info-value">${planet.temperature.min}°C to ${planet.temperature.max}°C</span>
+                        </div>
+                    `;
+                } else if (planet.temperature !== undefined) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Temperature:</span>
+                            <span class="info-value">${planet.temperature} K</span>
+                        </div>
+                    `;
+                }
+                
+                if (planet.atmosphere) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Atmosphere:</span>
+                            <span class="info-value">${planet.atmosphere}</span>
+                        </div>
+                    `;
+                }
+                
+                if (planet.composition) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">Composition:</span>
+                            <span class="info-value">${planet.composition}</span>
+                        </div>
+                    `;
+                }
+                
+                if (planet.info) {
+                    html += `
+                        <div class="info-item" style="margin-top: 15px; border-left-color: #ffa726;">
+                            <strong>Did you know?</strong><br>
+                            ${planet.info}
+                        </div>
+                    `;
+                }
+                
+                // Calculate travel time from Earth
+                if (planetKey !== 'earth' && planet.distanceFromSun) {
+                    const earth = this.celestialBodies.earth;
+                    const distance = Math.abs(planet.distanceFromSun - earth.distanceFromSun);
+                    const speedOfLight = 299792; // km/s
+                    const voyagerSpeed = 17; // km/s (Voyager 1 speed)
+                    
+                    const lightTime = distance / speedOfLight;
+                    const voyagerTime = distance / voyagerSpeed / 86400; // Convert to days
+                    
+                    html += `
+                        <h3 style="margin-top: 20px;">🚀 Travel Times from Earth</h3>
+                        <div class="info-item">
+                            <span class="info-label">Light speed:</span>
+                            <span class="info-value">${(lightTime / 60).toFixed(1)} minutes</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Voyager speed:</span>
+                            <span class="info-value">${(voyagerTime / 365).toFixed(1)} years</span>
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('planet-info').innerHTML = html;
+            }
+            
+            showMeasurement() {
+                if (!this.measureStart || !this.measureEnd) return;
+                
+                const distance = Math.sqrt(
+                    Math.pow(this.measureEnd.x - this.measureStart.x, 2) +
+                    Math.pow(this.measureEnd.y - this.measureStart.y, 2)
+                );
+                
+                // Convert to real distance
+                const realDistance = (distance / this.AU) * 149.6e6; // km
+                const lightMinutes = realDistance / 299792 / 60;
+                
+                const html = `
+                    <h3>📏 Distance Measurement</h3>
+                    <div class="info-item">
+                        <span class="info-label">From:</span>
+                        <span class="info-value">${this.celestialBodies[this.measureStartName].name}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">To:</span>
+                        <span class="info-value">${this.celestialBodies[this.measureEndName].name}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Distance:</span>
+                        <span class="info-value">${(realDistance / 1e6).toFixed(2)} million km</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">AU:</span>
+                        <span class="info-value">${(distance / this.AU).toFixed(3)} AU</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Light travel:</span>
+                        <span class="info-value">${lightMinutes.toFixed(1)} minutes</span>
+                    </div>
+                    <button onclick="explorer.clearMeasurement()">Clear</button>
+                `;
+                
+                document.getElementById('measurement-info').innerHTML = html;
+            }
+            
+            clearMeasurement() {
+                this.measureStart = null;
+                this.measureEnd = null;
+                this.measureStartName = null;
+                this.measureEndName = null;
+                document.getElementById('measurement-info').innerHTML = 
+                    '<p>Click on two objects to measure distance</p>';
+            }
+            
+            startQuiz() {
+                this.currentQuiz = [...this.quizQuestions].sort(() => Math.random() - 0.5).slice(0, 5);
+                this.quizScore = 0;
+                this.currentQuestionIndex = 0;
+                this.showQuizQuestion();
+                document.getElementById('quiz-panel').style.display = 'block';
+            }
+            
+            showQuizQuestion() {
+                if (this.currentQuestionIndex >= this.currentQuiz.length) {
+                    this.showQuizResults();
+                    return;
+                }
+                
+                const question = this.currentQuiz[this.currentQuestionIndex];
+                let html = `
+                    <div class="quiz-question">
+                        Question ${this.currentQuestionIndex + 1} of ${this.currentQuiz.length}:<br>
+                        <strong>${question.question}</strong>
+                    </div>
+                    <div class="quiz-options">
+                `;
+                
+                question.options.forEach((option, index) => {
+                    html += `
+                        <button class="quiz-option" onclick="explorer.answerQuiz(${index})">
+                            ${option}
+                        </button>
+                    `;
+                });
+                
+                html += '</div>';
+                document.getElementById('quiz-content').innerHTML = html;
+            }
+            
+            answerQuiz(answerIndex) {
+                const question = this.currentQuiz[this.currentQuestionIndex];
+                
+                if (answerIndex === question.correct) {
+                    this.quizScore++;
+                    alert('Correct! ' + question.explanation);
+                } else {
+                    alert('Incorrect. ' + question.explanation);
+                }
+                
+                this.currentQuestionIndex++;
+                this.showQuizQuestion();
+            }
+            
+            showQuizResults() {
+                const percentage = (this.quizScore / this.currentQuiz.length * 100).toFixed(0);
+                let message = '';
+                
+                if (percentage >= 80) {
+                    message = '🌟 Excellent! You\'re a space expert!';
+                } else if (percentage >= 60) {
+                    message = '👍 Good job! Keep exploring!';
+                } else {
+                    message = '📚 Keep learning about our solar system!';
+                }
+                
+                const html = `
+                    <div class="quiz-score">
+                        Your Score: ${this.quizScore} / ${this.currentQuiz.length} (${percentage}%)
+                    </div>
+                    <p style="text-align: center; margin: 20px 0;">${message}</p>
+                    <div style="text-align: center;">
+                        <button onclick="explorer.startQuiz()">Try Again</button>
+                    </div>
+                `;
+                
+                document.getElementById('quiz-content').innerHTML = html;
+            }
+            
+            hideLoading() {
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                }, 1500);
+            }
+        }
+        
+        // Initialize the explorer
+        let explorer;
+        window.addEventListener('load', () => {
+            explorer = new SolarSystemExplorer();
+        });
+    </script>
+</body>
+</html>
