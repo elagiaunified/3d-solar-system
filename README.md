@@ -159,7 +159,7 @@ Found a bug or have a suggestion? Please [open an issue](https://github.com/elag
 
 ## 📧 Contact
 
-Project Link: [https://github.com/elagiaunified/solar-system-explorer](https://github.com/elaguiaunified/3d-solar-system)
+Project Link: [https://github.com/elagiaunified/3d-solar-system](https://github.com/elagiaunified/3d-solar-system)
 
 ---
 
