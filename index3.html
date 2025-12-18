@@ -837,50 +837,50 @@
                 const ctx = this.ctx;
                 const width = this.canvas.width;
                 const height = this.canvas.height;
-                
+    
                 // Clear and setup background
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, width, height);
-                
+    
                 // Draw stars background
                 this.drawStars(ctx, width, height);
-                
+    
                 // Save context and apply camera transform
                 ctx.save();
                 ctx.translate(width / 2, height / 2);
                 ctx.scale(this.camera.zoom, this.camera.zoom);
                 ctx.translate(-this.camera.x, -this.camera.y);
-                
+    
                 // Draw grid if enabled
                 if (this.showGrid) {
                     this.drawGrid(ctx);
                 }
-                
+    
                 // Draw habitable zone
                 if (this.showHabitable) {
                     this.drawHabitableZone(ctx);
                 }
-                
+    
                 // Draw orbits
                 if (this.showOrbits) {
                     this.drawOrbits(ctx);
                 }
-                
+    
                 // Draw celestial bodies
                 this.drawCelestialBodies(ctx);
-                
+    
                 // Draw Lagrange points if enabled
                 if (this.showLagrange && this.selectedPlanet) {
                     this.drawLagrangePoints(ctx);
                 }
-                
+    
                 // Draw measurement line if active
                 if (this.measureMode && this.measureStart) {
                     this.drawMeasurementLine(ctx);
                 }
-                
+    
                 ctx.restore();
-                
+    
                 // Draw labels (screen space)
                 if (this.showLabels) {
                     this.drawLabels(ctx, width, height);
