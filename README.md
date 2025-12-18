@@ -1,7 +1,7 @@
 # Solar System Explorer 🪐
 
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://elagiaunified.github.io/3d-solar-system/index.html)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://elagiaunified.github.io/3d-solar-system/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 An interactive 3D solar system simulation with physics, educational tools, and quiz challenges. Explore our cosmic neighborhood in real-time!
