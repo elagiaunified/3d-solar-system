@@ -32,7 +32,7 @@
  <body class="h-full">
   <div id="app" class="h-full w-full relative overflow-hidden">
    <canvas id="spaceCanvas" class="absolute inset-0 w-full h-full"></canvas>
-   <div class="absolute inset-0 pointer-events-none"><!-- Header -->
+   <div class="absolute inset-0"><!-- Header -->
     <div class="p-6 pointer-events-auto">
      <h1 id="titleText" class="text-4xl font-bold mb-2">Solar System Explorer</h1>
      <p id="subtitleText" class="text-xl opacity-90">Complete Interactive 3D Solar System with Physics &amp; Educational Tools</p>
@@ -448,32 +448,28 @@
     }
 
     function findObjectAtPoint(x, y) {
-      // Check all bodies including sun
-      const bodiesToCheck = [
-        ['sun', celestialBodies.sun],
-        ['mercury', celestialBodies.mercury],
-        ['venus', celestialBodies.venus],
-        ['earth', celestialBodies.earth],
-        ['moon', celestialBodies.moon],
-        ['mars', celestialBodies.mars],
-        ['jupiter', celestialBodies.jupiter],
-        ['saturn', celestialBodies.saturn],
-        ['uranus', celestialBodies.uranus],
-        ['neptune', celestialBodies.neptune]
-      ];
-      
-      // Check smaller/closer objects first (reverse order)
-      for (let i = bodiesToCheck.length - 1; i >= 0; i--) {
-        const [key, body] = bodiesToCheck[i];
-        const pos = getPosition(body);
-        // Use larger click radius for better selection
-        const clickRadius = Math.max(body.radius * zoom, 12);
-        if (isPointInCircle(x, y, pos.x, pos.y, clickRadius)) {
-          return key;
-        }
-      }
-      return null;
+  // First check the Sun specifically
+  const sun = celestialBodies.sun;
+  const sunPos = { x: centerX, y: centerY };
+  const sunRadius = sun.radius * zoom;
+  if (isPointInCircle(x, y, sunPos.x, sunPos.y, sunRadius * 1.5)) { // 1.5x larger click area
+    return 'sun';
+  }
+  
+  // Then check other planets (check larger/more important ones first)
+  const planetsToCheck = ['jupiter', 'saturn', 'earth', 'venus', 'mars', 'mercury', 'uranus', 'neptune', 'moon'];
+  
+  for (const key of planetsToCheck) {
+    const body = celestialBodies[key];
+    const pos = getPosition(body);
+    const clickRadius = Math.max(body.radius * zoom, 15); // Minimum 15px click area
+    if (isPointInCircle(x, y, pos.x, pos.y, clickRadius)) {
+      return key;
     }
+  }
+  
+  return null;
+}
 
     function updateSelection(key) {
       if (key !== selectedObject) {
@@ -681,37 +677,50 @@
 
     // Event Listeners
     canvas.addEventListener('mousedown', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      
-      const clickedObj = findObjectAtPoint(mouseX, mouseY);
-      
-      if (measureMode && clickedObj) {
-        if (!measurePoint1) {
-          measurePoint1 = clickedObj;
-        } else if (!measurePoint2) {
-          measurePoint2 = clickedObj;
-          const dist = calculateDistance(measurePoint1, measurePoint2);
-          document.getElementById('measureValue').innerHTML = 
-            `${dist.au} AU<br><span style="font-size: 14px;">(${dist.km}M km)</span>`;
-          document.getElementById('measureDisplay').style.opacity = '1';
-        } else {
-          measurePoint1 = clickedObj;
-          measurePoint2 = null;
-          document.getElementById('measureDisplay').style.opacity = '0';
-        }
-      } else if (clickedObj) {
-        // Only select if we clicked on an object
-        updateSelection(clickedObj);
-        // Don't start dragging if we clicked an object
-      } else {
-        // Start dragging only if we didn't click an object
-        isDragging = true;
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
-      }
-    });
+  e.preventDefault(); // Prevent text selection
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  
+  // Check if we clicked on the Sun (center)
+  const sunRadius = celestialBodies.sun.radius * zoom;
+  const distanceFromCenter = Math.sqrt(
+    Math.pow(mouseX - centerX, 2) + 
+    Math.pow(mouseY - centerY, 2)
+  );
+  
+  // If clicked near center and no planet is closer, select Sun
+  if (distanceFromCenter <= sunRadius * 1.5) {
+    updateSelection('sun');
+    // Don't start dragging if we clicked the Sun
+    return;
+  }
+  
+  const clickedObj = findObjectAtPoint(mouseX, mouseY);
+  
+  if (measureMode && clickedObj) {
+    if (!measurePoint1) {
+      measurePoint1 = clickedObj;
+    } else if (!measurePoint2) {
+      measurePoint2 = clickedObj;
+      const dist = calculateDistance(measurePoint1, measurePoint2);
+      document.getElementById('measureValue').innerHTML = 
+        `${dist.au} AU<br><span style="font-size: 14px;">(${dist.km}M km)</span>`;
+      document.getElementById('measureDisplay').style.opacity = '1';
+    } else {
+      measurePoint1 = clickedObj;
+      measurePoint2 = null;
+      document.getElementById('measureDisplay').style.opacity = '0';
+    }
+  } else if (clickedObj) {
+    updateSelection(clickedObj);
+    // Don't start dragging if we clicked an object
+  } else {
+    isDragging = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  }
+});
 
     canvas.addEventListener('mousemove', (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -738,14 +747,18 @@
       isDragging = false;
     });
 
-    canvas.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      // More responsive zoom with better sensitivity
-      const zoomSpeed = 0.001;
-      const delta = e.deltaY * -zoomSpeed;
-      const newZoom = zoom * (1 + delta);
-      zoom = Math.max(0.2, Math.min(3, newZoom));
-    }, { passive: false });
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  // More natural zoom that zooms toward mouse position
+  const zoomSpeed = 0.001;
+  const delta = e.deltaY * -zoomSpeed;
+  const newZoom = zoom * (1 + delta);
+  
+  // Constrain zoom between 0.2 and 3
+  zoom = Math.max(0.2, Math.min(3, newZoom));
+}, { passive: false });
 
     document.getElementById('speedSlider').addEventListener('input', (e) => {
       timeSpeed = parseFloat(e.target.value) / 10;
@@ -939,7 +952,25 @@
       config = defaultConfig;
       onConfigChange(config);
     }
+// Initialize canvas properly
+canvas.style.cursor = 'grab';
 
+// Ensure canvas receives focus
+canvas.setAttribute('tabindex', '0');
+canvas.style.outline = 'none';
+
+// Initial render
+resizeCanvas();
+
+// Force initial config application
+if (window.elementSdk) {
+  config = window.elementSdk.config;
+} else {
+  config = defaultConfig;
+}
+onConfigChange(config);
+
+// Start animation
     animate();
   </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9afb1c9793fb9374',t:'MTc2NjAyMzY5OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
