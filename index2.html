@@ -36,13 +36,108 @@
             height: 100%;
         }
 
+        /* Sidebar for planet selection */
+        .planet-sidebar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 260px;
+            background: rgba(26, 31, 58, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 100;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .planet-group {
+            margin-bottom: 20px;
+        }
+
+        .planet-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .group-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .planet-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .planet-item {
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .planet-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .planet-item.active {
+            background: rgba(74, 144, 226, 0.2);
+            border-color: #4a90e2;
+        }
+
+        .planet-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .planet-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .planet-type {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-left: auto;
+        }
+
         /* Header */
         .header {
             position: absolute;
             top: 20px;
-            left: 20px;
+            left: 300px;
             z-index: 100;
             pointer-events: none;
+            max-width: 500px;
         }
 
         .header h1 {
@@ -55,7 +150,6 @@
         .header p {
             font-size: 1.1rem;
             opacity: 0.9;
-            max-width: 400px;
         }
 
         /* Control Panel */
@@ -183,7 +277,7 @@
         .info-panel {
             position: absolute;
             bottom: 20px;
-            left: 20px;
+            left: 300px;
             background: rgba(26, 31, 58, 0.9);
             backdrop-filter: blur(10px);
             border-radius: 12px;
@@ -305,11 +399,363 @@
             font-size: 0.8rem;
             opacity: 0.7;
         }
+
+        /* Quiz Modal */
+        .quiz-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .quiz-modal.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .quiz-content {
+            background: rgba(26, 31, 58, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .quiz-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quiz-question {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid #4a90e2;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-option {
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            color: inherit;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .quiz-option:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            border-color: rgba(74, 144, 226, 0.3);
+        }
+
+        .quiz-option.selected {
+            border-color: #4a90e2;
+            background: rgba(74, 144, 226, 0.15);
+        }
+
+        .quiz-option.correct {
+            border-color: #32CD32;
+            background: rgba(50, 205, 50, 0.15);
+        }
+
+        .quiz-option.incorrect {
+            border-color: #FF4444;
+            background: rgba(255, 68, 68, 0.15);
+        }
+
+        .quiz-feedback {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .quiz-feedback.visible {
+            display: block;
+        }
+
+        .quiz-feedback.correct {
+            background: rgba(50, 205, 50, 0.1);
+            border: 1px solid rgba(50, 205, 50, 0.3);
+        }
+
+        .quiz-feedback.incorrect {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+        }
+
+        .quiz-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .quiz-score {
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quiz-score-value {
+            color: #4a90e2;
+            font-size: 1.1rem;
+        }
+
+        #nextQuiz {
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        #restartQuiz {
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: #8b5cf6;
+        }
+
+        .quiz-complete {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .quiz-complete h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #4a90e2;
+        }
+
+        .quiz-complete p {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+
+        .final-score {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #FFD700;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .quiz-complete-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar styling */
+        .planet-sidebar::-webkit-scrollbar,
+        .info-panel::-webkit-scrollbar,
+        .quiz-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .planet-sidebar::-webkit-scrollbar-track,
+        .info-panel::-webkit-scrollbar-track,
+        .quiz-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .planet-sidebar::-webkit-scrollbar-thumb,
+        .info-panel::-webkit-scrollbar-thumb,
+        .quiz-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .planet-sidebar::-webkit-scrollbar-thumb:hover,
+        .info-panel::-webkit-scrollbar-thumb:hover,
+        .quiz-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body>
     <div id="canvas-container">
         <canvas id="spaceCanvas"></canvas>
+    </div>
+
+    <!-- Planet Selection Sidebar -->
+    <div class="planet-sidebar">
+        <div class="sidebar-header">
+            <h2>🌌 Celestial Bodies</h2>
+        </div>
+        
+        <div class="planet-group">
+            <div class="group-title">⭐ Star</div>
+            <div class="planet-list">
+                <div class="planet-item" data-body="sun">
+                    <div class="planet-icon" style="background: #FFD700;"></div>
+                    <div class="planet-name">Sun</div>
+                    <div class="planet-type">Star</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="planet-group">
+            <div class="group-title">🪐 Planets</div>
+            <div class="planet-list">
+                <div class="planet-item" data-body="mercury">
+                    <div class="planet-icon" style="background: #8A8A8A;"></div>
+                    <div class="planet-name">Mercury</div>
+                    <div class="planet-type">Planet</div>
+                </div>
+                <div class="planet-item" data-body="venus">
+                    <div class="planet-icon" style="background: #E8A030;"></div>
+                    <div class="planet-name">Venus</div>
+                    <div class="planet-type">Planet</div>
+                </div>
+                <div class="planet-item" data-body="earth">
+                    <div class="planet-icon" style="background: #2E5C8A;"></div>
+                    <div class="planet-name">Earth</div>
+                    <div class="planet-type">Planet</div>
+                </div>
+                <div class="planet-item" data-body="mars">
+                    <div class="planet-icon" style="background: #C1440E;"></div>
+                    <div class="planet-name">Mars</div>
+                    <div class="planet-type">Planet</div>
+                </div>
+                <div class="planet-item" data-body="jupiter">
+                    <div class="planet-icon" style="background: #C4935B;"></div>
+                    <div class="planet-name">Jupiter</div>
+                    <div class="planet-type">Planet</div>
+                </div>
+                <div class="planet-item" data-body="saturn">
+                    <div class="planet-icon" style="background: #D4C18A;"></div>
+                    <div class="planet-name">Saturn</div>
+                    <div class="planet-type">Planet</div>
+                </div>
+                <div class="planet-item" data-body="uranus">
+                    <div class="planet-icon" style="background: #7FB3C8;"></div>
+                    <div class="planet-name">Uranus</div>
+                    <div class="planet-type">Planet</div>
+                </div>
+                <div class="planet-item" data-body="neptune">
+                    <div class="planet-icon" style="background: #4A5FAD;"></div>
+                    <div class="planet-name">Neptune</div>
+                    <div class="planet-type">Planet</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="planet-group">
+            <div class="group-title">🌕 Earth's Moon</div>
+            <div class="planet-list">
+                <div class="planet-item" data-body="moon">
+                    <div class="planet-icon" style="background: #8A8A8A;"></div>
+                    <div class="planet-name">Moon</div>
+                    <div class="planet-type">Moon</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="planet-group">
+            <div class="group-title">🛸 Jupiter's Moons</div>
+            <div class="planet-list">
+                <div class="planet-item" data-body="io">
+                    <div class="planet-icon" style="background: #CC6633;"></div>
+                    <div class="planet-name">Io</div>
+                    <div class="planet-type">Moon</div>
+                </div>
+                <div class="planet-item" data-body="europa">
+                    <div class="planet-icon" style="background: #99CCFF;"></div>
+                    <div class="planet-name">Europa</div>
+                    <div class="planet-type">Moon</div>
+                </div>
+                <div class="planet-item" data-body="ganymede">
+                    <div class="planet-icon" style="background: #999966;"></div>
+                    <div class="planet-name">Ganymede</div>
+                    <div class="planet-type">Moon</div>
+                </div>
+                <div class="planet-item" data-body="callisto">
+                    <div class="planet-icon" style="background: #666633;"></div>
+                    <div class="planet-name">Callisto</div>
+                    <div class="planet-type">Moon</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="planet-group">
+            <div class="group-title">🪐 Saturn's Moons</div>
+            <div class="planet-list">
+                <div class="planet-item" data-body="titan">
+                    <div class="planet-icon" style="background: #CC9966;"></div>
+                    <div class="planet-name">Titan</div>
+                    <div class="planet-type">Moon</div>
+                </div>
+                <div class="planet-item" data-body="rhea">
+                    <div class="planet-icon" style="background: #AAAAAA;"></div>
+                    <div class="planet-name">Rhea</div>
+                    <div class="planet-type">Moon</div>
+                </div>
+                <div class="planet-item" data-body="enceladus">
+                    <div class="planet-icon" style="background: #FFFFFF;"></div>
+                    <div class="planet-name">Enceladus</div>
+                    <div class="planet-type">Moon</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Header -->
@@ -350,6 +796,7 @@
                 <div>🖱️ Drag to rotate</div>
                 <div>🔍 Scroll to zoom</div>
                 <div>🖱️ Click planets for info</div>
+                <div>📋 Use sidebar to select</div>
             </div>
         </div>
     </div>
@@ -418,6 +865,47 @@
         <div class="tool-instruction">Click two objects to measure</div>
     </div>
 
+    <!-- Quiz Modal -->
+    <div id="quizModal" class="quiz-modal">
+        <div class="quiz-content">
+            <div class="quiz-header">
+                <h2>🎓 Solar System Quiz</h2>
+                <button id="closeQuiz" class="close-btn">×</button>
+            </div>
+            
+            <div id="quizQuestionContainer">
+                <div id="quizQuestion" class="quiz-question">
+                    Which planet has the strongest gravity?
+                </div>
+                
+                <div id="quizOptions" class="quiz-options">
+                    <!-- Options will be added by JavaScript -->
+                </div>
+                
+                <div id="quizFeedback" class="quiz-feedback">
+                    <!-- Feedback will be added by JavaScript -->
+                </div>
+                
+                <div class="quiz-footer">
+                    <div class="quiz-score">
+                        Score: <span id="quizScore" class="quiz-score-value">0</span>/<span id="quizTotal">5</span>
+                    </div>
+                    <button id="nextQuiz">Next Question</button>
+                </div>
+            </div>
+            
+            <div id="quizComplete" class="quiz-complete" style="display: none;">
+                <h3>🎉 Quiz Complete!</h3>
+                <div class="final-score" id="finalScore">5/5</div>
+                <p>Great job exploring the solar system! Keep learning about our cosmic neighborhood.</p>
+                <div class="quiz-complete-buttons">
+                    <button id="restartQuiz">Restart Quiz</button>
+                    <button id="closeQuizComplete">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize canvas and context
         const canvas = document.getElementById('spaceCanvas');
@@ -454,16 +942,86 @@
         let measurePoint1 = null;
         let measurePoint2 = null;
 
-        // Celestial bodies data
+        // Quiz variables
+        let currentQuestionIndex = 0;
+        let quizScore = 0;
+        let quizCompleted = false;
+
+        // Quiz questions
+        const quizQuestions = [
+            {
+                question: "Which planet has the strongest gravity?",
+                options: ["Earth", "Jupiter", "Saturn", "Neptune"],
+                correct: 1,
+                explanation: "Jupiter has the strongest gravity at 24.8 m/s², over 2.5 times Earth's gravity!"
+            },
+            {
+                question: "Which planet could theoretically float in water?",
+                options: ["Mars", "Saturn", "Uranus", "Venus"],
+                correct: 1,
+                explanation: "Saturn is the least dense planet and would float if you could find a bathtub big enough!"
+            },
+            {
+                question: "How long does it take light from the Sun to reach Earth?",
+                options: ["8 seconds", "8 minutes", "8 hours", "8 days"],
+                correct: 1,
+                explanation: "Light takes about 8 minutes and 20 seconds to travel from the Sun to Earth (1 AU)."
+            },
+            {
+                question: "Which planet has the longest day (rotation period)?",
+                options: ["Mercury", "Venus", "Jupiter", "Neptune"],
+                correct: 1,
+                explanation: "Venus takes 243 Earth days to rotate once, longer than its year of 225 days!"
+            },
+            {
+                question: "What is the habitable zone also known as?",
+                options: ["Safe zone", "Goldilocks zone", "Life zone", "Green zone"],
+                correct: 1,
+                explanation: "The habitable zone is called the 'Goldilocks zone' - not too hot, not too cold, just right for liquid water!"
+            },
+            {
+                question: "Which planet is known as the 'Red Planet'?",
+                options: ["Venus", "Mars", "Jupiter", "Saturn"],
+                correct: 1,
+                explanation: "Mars is called the Red Planet because of its reddish appearance due to iron oxide (rust) on its surface."
+            },
+            {
+                question: "What is the largest moon in the solar system?",
+                options: ["Moon (Earth)", "Titan", "Ganymede", "Europa"],
+                correct: 2,
+                explanation: "Ganymede, Jupiter's moon, is the largest moon in our solar system, even bigger than Mercury!"
+            },
+            {
+                question: "Which planet has the most extensive ring system?",
+                options: ["Jupiter", "Saturn", "Uranus", "Neptune"],
+                correct: 1,
+                explanation: "Saturn has the most prominent and extensive ring system, made mostly of ice particles."
+            },
+            {
+                question: "What is the hottest planet in our solar system?",
+                options: ["Mercury", "Venus", "Mars", "Jupiter"],
+                correct: 1,
+                explanation: "Venus is the hottest planet with surface temperatures reaching 462°C, even hotter than Mercury!"
+            },
+            {
+                question: "Which moon is known for its subsurface ocean that could harbor life?",
+                options: ["Moon (Earth)", "Io", "Europa", "Titan"],
+                correct: 2,
+                explanation: "Europa, one of Jupiter's moons, has a subsurface ocean beneath its icy crust that could potentially support life."
+            }
+        ];
+
+        // All celestial bodies with proper distances and slower moon orbits
         const celestialBodies = {
+            // Star
             sun: {
                 name: "Sun",
-                radius: 35,
+                radius: 40,
                 color: ["#FFF9E6", "#FFD700"],
                 distance: 0,
                 period: 0,
                 angle: 0,
-                description: "The star at the center of our solar system, containing 99.86% of the system's mass.",
+                description: "The star at the center of our solar system, containing 99.86% of the system's mass. It's a nearly perfect sphere of hot plasma, with internal convective motion that generates a magnetic field via a dynamo process.",
                 distanceText: "0 AU",
                 periodText: "N/A",
                 velocity: "N/A",
@@ -471,8 +1029,10 @@
                 mass: "1.989 × 10³⁰ kg",
                 gravity: "274 m/s²",
                 composition: "73% Hydrogen, 25% Helium, 2% heavier elements",
-                travel: "N/A - Too hot to approach!"
+                travel: "N/A - Too hot to approach! Surface temperature: 5,500°C"
             },
+            
+            // Planets
             mercury: {
                 name: "Mercury",
                 radius: 8,
@@ -480,7 +1040,7 @@
                 distance: 90,
                 period: 88,
                 angle: 0,
-                description: "Smallest planet and closest to the Sun. No atmosphere and extreme temperature variations.",
+                description: "Smallest planet and closest to the Sun. No atmosphere and extreme temperature variations from 430°C during day to -180°C at night.",
                 distanceText: "0.39 AU (58M km)",
                 periodText: "88 days",
                 velocity: "47.4 km/s",
@@ -497,7 +1057,7 @@
                 distance: 130,
                 period: 225,
                 angle: 1.5,
-                description: "Hottest planet with a thick toxic atmosphere. Rotates backwards compared to most planets.",
+                description: "Hottest planet with a thick toxic atmosphere. Rotates backwards compared to most planets. Surface pressure is 92 times Earth's!",
                 distanceText: "0.72 AU (108M km)",
                 periodText: "225 days",
                 velocity: "35.0 km/s",
@@ -514,7 +1074,7 @@
                 distance: 180,
                 period: 365,
                 angle: 3,
-                description: "Our home planet. Only known world with life. 71% covered by water with nitrogen-oxygen atmosphere.",
+                description: "Our home planet. Only known world with life. 71% covered by water with nitrogen-oxygen atmosphere. Has one natural satellite, the Moon.",
                 distanceText: "1.0 AU (150M km)",
                 periodText: "365.25 days",
                 velocity: "29.8 km/s",
@@ -531,7 +1091,7 @@
                 distance: 240,
                 period: 687,
                 angle: 4.5,
-                description: "The Red Planet with the largest volcano and canyon in the solar system. Prime candidate for colonization.",
+                description: "The Red Planet with the largest volcano (Olympus Mons) and canyon (Valles Marineris) in the solar system. Prime candidate for colonization.",
                 distanceText: "1.52 AU (228M km)",
                 periodText: "687 days",
                 velocity: "24.1 km/s",
@@ -543,12 +1103,12 @@
             },
             jupiter: {
                 name: "Jupiter",
-                radius: 30,
+                radius: 32,
                 color: ["#E8B882", "#C4935B"],
                 distance: 350,
                 period: 4333,
                 angle: 6,
-                description: "Largest planet with a mass greater than all other planets combined. Famous Great Red Spot storm.",
+                description: "Largest planet with a mass greater than all other planets combined. Famous Great Red Spot storm that has raged for centuries.",
                 distanceText: "5.2 AU (778M km)",
                 periodText: "11.9 years",
                 velocity: "13.1 km/s",
@@ -560,7 +1120,7 @@
             },
             saturn: {
                 name: "Saturn",
-                radius: 26,
+                radius: 28,
                 color: ["#F4E8C1", "#D4C18A"],
                 distance: 450,
                 period: 10759,
@@ -574,24 +1134,274 @@
                 gravity: "10.4 m/s²",
                 composition: "Gas giant - H₂/He with magnificent ring system",
                 travel: "~3-4 years (Cassini: 7 years)"
+            },
+            uranus: {
+                name: "Uranus",
+                radius: 18,
+                color: ["#A4D4E6", "#7FB3C8"],
+                distance: 520,
+                period: 30687,
+                angle: 8.5,
+                description: "Ice giant that rotates on its side! Coldest planetary atmosphere in the solar system. Has faint rings and rotates horizontally.",
+                distanceText: "19.2 AU (2.9B km)",
+                periodText: "84 years",
+                velocity: "6.8 km/s",
+                diameter: "50,724 km",
+                mass: "8.68 × 10²⁵ kg",
+                gravity: "8.9 m/s²",
+                composition: "Ice giant - H₂/He/CH₄ atmosphere, icy mantle",
+                travel: "~8-9 years (Voyager 2: 8.5 years)"
+            },
+            neptune: {
+                name: "Neptune",
+                radius: 17,
+                color: ["#5E7FCF", "#4A5FAD"],
+                distance: 580,
+                period: 60190,
+                angle: 9.5,
+                description: "Furthest planet with the strongest winds in the solar system, up to 2,100 km/h! Deep blue color from methane in atmosphere.",
+                distanceText: "30.1 AU (4.5B km)",
+                periodText: "165 years",
+                velocity: "5.4 km/s",
+                diameter: "49,244 km",
+                mass: "1.02 × 10²⁶ kg",
+                gravity: "11.2 m/s²",
+                composition: "Ice giant - H₂/He/CH₄ atmosphere, supersonic winds",
+                travel: "~12 years (Voyager 2: 12 years)"
+            },
+            
+            // Earth's Moon
+            moon: {
+                name: "Moon",
+                radius: 6,
+                color: ["#C8C8C8", "#8A8A8A"],
+                distance: 35,
+                period: 27.3,
+                angle: 0,
+                parent: "earth",
+                description: "Earth's only natural satellite. Influences tides and stabilizes Earth's axial tilt. The only celestial body besides Earth visited by humans.",
+                distanceText: "384,400 km from Earth",
+                periodText: "27.3 days",
+                velocity: "1.0 km/s",
+                diameter: "3,474 km",
+                mass: "7.35 × 10²² kg",
+                gravity: "1.6 m/s²",
+                composition: "Rocky - No atmosphere, ancient volcanic maria",
+                travel: "~3 days (Apollo missions took 3 days)"
+            },
+            
+            // Jupiter's Moons
+            io: {
+                name: "Io",
+                radius: 4,
+                color: ["#FF9966", "#CC6633"],
+                distance: 25,
+                period: 1.77,
+                angle: 0,
+                parent: "jupiter",
+                description: "Jupiter's moon and the most volcanically active body in the solar system. Covered in volcanoes and sulfur compounds.",
+                distanceText: "421,800 km from Jupiter",
+                periodText: "1.77 days",
+                velocity: "17.3 km/s",
+                diameter: "3,643 km",
+                mass: "8.93 × 10²² kg",
+                gravity: "1.8 m/s²",
+                composition: "Rocky with sulfur surface, silicate mantle",
+                travel: "~13 months to 2 years (with Jupiter mission)"
+            },
+            europa: {
+                name: "Europa",
+                radius: 4,
+                color: ["#CCFFFF", "#99CCFF"],
+                distance: 32,
+                period: 3.55,
+                angle: 1.2,
+                parent: "jupiter",
+                description: "Jupiter's moon with a smooth, icy surface. Believed to have a subsurface ocean that could harbor life.",
+                distanceText: "671,100 km from Jupiter",
+                periodText: "3.55 days",
+                velocity: "13.7 km/s",
+                diameter: "3,122 km",
+                mass: "4.80 × 10²² kg",
+                gravity: "1.3 m/s²",
+                composition: "Ice shell with subsurface ocean, rocky core",
+                travel: "~13 months to 2 years (with Jupiter mission)"
+            },
+            ganymede: {
+                name: "Ganymede",
+                radius: 5,
+                color: ["#CCCC99", "#999966"],
+                distance: 40,
+                period: 7.15,
+                angle: 2.4,
+                parent: "jupiter",
+                description: "Largest moon in the solar system, even bigger than Mercury. Has its own magnetic field.",
+                distanceText: "1,070,400 km from Jupiter",
+                periodText: "7.15 days",
+                velocity: "10.9 km/s",
+                diameter: "5,268 km",
+                mass: "1.48 × 10²³ kg",
+                gravity: "1.4 m/s²",
+                composition: "Ice and rock, subsurface ocean",
+                travel: "~13 months to 2 years (with Jupiter mission)"
+            },
+            callisto: {
+                name: "Callisto",
+                radius: 4.5,
+                color: ["#999966", "#666633"],
+                distance: 48,
+                period: 16.7,
+                angle: 3.6,
+                parent: "jupiter",
+                description: "Jupiter's second largest moon. Heavily cratered ancient surface, possibly with a subsurface ocean.",
+                distanceText: "1,882,700 km from Jupiter",
+                periodText: "16.7 days",
+                velocity: "8.2 km/s",
+                diameter: "4,821 km",
+                mass: "1.08 × 10²³ kg",
+                gravity: "1.2 m/s²",
+                composition: "Ice and rock mixture",
+                travel: "~13 months to 2 years (with Jupiter mission)"
+            },
+            
+            // Saturn's Moons
+            titan: {
+                name: "Titan",
+                radius: 5,
+                color: ["#FFCC99", "#CC9966"],
+                distance: 30,
+                period: 15.9,
+                angle: 3.1,
+                parent: "saturn",
+                description: "Saturn's largest moon and the only moon with a dense atmosphere. Has lakes of liquid methane and ethane.",
+                distanceText: "1,221,850 km from Saturn",
+                periodText: "15.9 days",
+                velocity: "5.6 km/s",
+                diameter: "5,150 km",
+                mass: "1.35 × 10²³ kg",
+                gravity: "1.4 m/s²",
+                composition: "Rocky core, water ice mantle, hydrocarbon lakes",
+                travel: "~3-4 years (with Saturn mission)"
+            },
+            rhea: {
+                name: "Rhea",
+                radius: 3.5,
+                color: ["#CCCCCC", "#AAAAAA"],
+                distance: 38,
+                period: 4.5,
+                angle: 1.8,
+                parent: "saturn",
+                description: "Saturn's second largest moon. Has a heavily cratered surface and may have a tenuous ring system.",
+                distanceText: "527,040 km from Saturn",
+                periodText: "4.5 days",
+                velocity: "8.5 km/s",
+                diameter: "1,528 km",
+                mass: "2.31 × 10²¹ kg",
+                gravity: "0.26 m/s²",
+                composition: "Ice with some rock",
+                travel: "~3-4 years (with Saturn mission)"
+            },
+            enceladus: {
+                name: "Enceladus",
+                radius: 3,
+                color: ["#FFFFFF", "#DDDDDD"],
+                distance: 28,
+                period: 1.37,
+                angle: 0.9,
+                parent: "saturn",
+                description: "Saturn's moon known for its geysers of water vapor and ice. Has a subsurface ocean that could support life.",
+                distanceText: "238,020 km from Saturn",
+                periodText: "1.37 days",
+                velocity: "12.6 km/s",
+                diameter: "504 km",
+                mass: "1.08 × 10²⁰ kg",
+                gravity: "0.11 m/s²",
+                composition: "Ice with subsurface ocean",
+                travel: "~3-4 years (with Saturn mission)"
             }
         };
+
+        // Quiz Functions
+        function loadQuizQuestion() {
+            if (currentQuestionIndex >= quizQuestions.length) {
+                showQuizComplete();
+                return;
+            }
+            
+            const question = quizQuestions[currentQuestionIndex];
+            document.getElementById('quizQuestion').textContent = question.question;
+            document.getElementById('quizTotal').textContent = quizQuestions.length;
+            
+            const optionsDiv = document.getElementById('quizOptions');
+            optionsDiv.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'quiz-option';
+                button.textContent = option;
+                button.dataset.index = index;
+                button.addEventListener('click', () => handleAnswer(index));
+                optionsDiv.appendChild(button);
+            });
+            
+            document.getElementById('quizFeedback').className = 'quiz-feedback';
+            document.getElementById('quizFeedback').style.display = 'none';
+            document.getElementById('quizFeedback').textContent = '';
+            
+            document.getElementById('nextQuiz').style.display = 'block';
+            document.getElementById('nextQuiz').textContent = currentQuestionIndex === quizQuestions.length - 1 ? 'Finish Quiz' : 'Next Question';
+            
+            document.getElementById('quizQuestionContainer').style.display = 'block';
+            document.getElementById('quizComplete').style.display = 'none';
+        }
+
+        function handleAnswer(selectedIndex) {
+            const question = quizQuestions[currentQuestionIndex];
+            const options = document.querySelectorAll('.quiz-option');
+            const feedback = document.getElementById('quizFeedback');
+            
+            options.forEach(option => {
+                option.classList.remove('selected', 'correct', 'incorrect');
+                option.disabled = true;
+                
+                const index = parseInt(option.dataset.index);
+                if (index === question.correct) {
+                    option.classList.add('correct');
+                } else if (index === selectedIndex) {
+                    option.classList.add('incorrect');
+                }
+            });
+            
+            if (selectedIndex === question.correct) {
+                quizScore++;
+                document.getElementById('quizScore').textContent = quizScore;
+                feedback.textContent = "✓ Correct! " + question.explanation;
+                feedback.className = 'quiz-feedback correct visible';
+            } else {
+                feedback.textContent = "✗ Incorrect. " + question.explanation;
+                feedback.className = 'quiz-feedback incorrect visible';
+            }
+        }
+
+        function showQuizComplete() {
+            quizCompleted = true;
+            document.getElementById('quizQuestionContainer').style.display = 'none';
+            document.getElementById('quizComplete').style.display = 'block';
+            document.getElementById('finalScore').textContent = `${quizScore}/${quizQuestions.length}`;
+        }
+
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            quizScore = 0;
+            quizCompleted = false;
+            document.getElementById('quizScore').textContent = '0';
+            loadQuizQuestion();
+        }
 
         // Drawing functions
         function drawBackground() {
             ctx.fillStyle = '#0a0e27';
             ctx.fillRect(0, 0, width, height);
-            
-            // Draw stars
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            for (let i = 0; i < 200; i++) {
-                const x = Math.random() * width;
-                const y = Math.random() * height;
-                const size = Math.random() * 1.5;
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fill();
-            }
         }
 
         function drawOrbit(distance, highlight = false) {
@@ -604,22 +1414,35 @@
             ctx.setLineDash([]);
         }
 
-        function drawSphere(x, y, radius, colors) {
-            // Create gradient for glow effect
-            const gradient = ctx.createRadialGradient(
-                x - radius * 0.3, y - radius * 0.3, 0,
-                x, y, radius * zoom * 1.5
-            );
-            gradient.addColorStop(0, colors[0] + 'FF');
-            gradient.addColorStop(0.7, colors[1] + 'CC');
-            gradient.addColorStop(1, colors[1] + '00');
-            
-            ctx.fillStyle = gradient;
+        function drawMoonOrbit(parentPos, distance, highlight = false) {
+            ctx.strokeStyle = highlight ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
             ctx.beginPath();
-            ctx.arc(x, y, radius * zoom * 1.5, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.arc(parentPos.x, parentPos.y, distance * zoom, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawSphere(x, y, radius, colors, isSun = false) {
+            if (isSun) {
+                // Sun glow effect
+                const glowRadius = radius * zoom * 2.5;
+                const glowGradient = ctx.createRadialGradient(
+                    x, y, 0,
+                    x, y, glowRadius
+                );
+                glowGradient.addColorStop(0, colors[0] + 'FF');
+                glowGradient.addColorStop(0.4, colors[1] + 'AA');
+                glowGradient.addColorStop(1, colors[1] + '00');
+                
+                ctx.fillStyle = glowGradient;
+                ctx.beginPath();
+                ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
             
-            // Draw planet body
+            // Planet body
             const bodyGradient = ctx.createRadialGradient(
                 x - radius * 0.2, y - radius * 0.2, 0,
                 x, y, radius * zoom
@@ -665,6 +1488,8 @@
 
         function drawGravityWells() {
             Object.values(celestialBodies).forEach(body => {
+                if (body.name === 'Sun' || body.parent) return;
+                
                 const pos = getPosition(body);
                 const gravityRadius = Math.log(body.radius + 1) * 40;
                 
@@ -682,7 +1507,74 @@
             });
         }
 
+        function drawLagrangePoints() {
+            const earth = celestialBodies.earth;
+            const earthPos = getPosition(earth);
+            const sunPos = { x: centerX, y: centerY };
+            
+            const dist = earth.distance * zoom;
+            const angle = earth.angle + rotation.y;
+            
+            const l1Dist = dist * 0.99;
+            const l2Dist = dist * 1.01;
+            const l3Dist = -dist;
+            
+            const l4Angle = angle + Math.PI / 3;
+            const l5Angle = angle - Math.PI / 3;
+            const l4Dist = dist;
+            const l5Dist = dist;
+            
+            const points = [
+                { x: sunPos.x + Math.cos(angle) * l1Dist, y: sunPos.y + Math.sin(angle) * l1Dist, label: 'L1' },
+                { x: sunPos.x + Math.cos(angle) * l2Dist, y: sunPos.y + Math.sin(angle) * l2Dist, label: 'L2' },
+                { x: sunPos.x + Math.cos(angle + Math.PI) * Math.abs(l3Dist), y: sunPos.y + Math.sin(angle + Math.PI) * Math.abs(l3Dist), label: 'L3' },
+                { x: sunPos.x + Math.cos(l4Angle) * l4Dist, y: sunPos.y + Math.sin(l4Angle) * l4Dist, label: 'L4' },
+                { x: sunPos.x + Math.cos(l5Angle) * l5Dist, y: sunPos.y + Math.sin(l5Angle) * l5Dist, label: 'L5' }
+            ];
+            
+            ctx.fillStyle = '#8b5cf6';
+            points.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Arial';
+                ctx.fillText(point.label, point.x + 8, point.y + 4);
+                ctx.fillStyle = '#8b5cf6';
+            });
+            
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            ctx.beginPath();
+            ctx.moveTo(sunPos.x, sunPos.y);
+            ctx.lineTo(earthPos.x, earthPos.y);
+            ctx.lineTo(points[3].x, points[3].y);
+            ctx.closePath();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(sunPos.x, sunPos.y);
+            ctx.lineTo(earthPos.x, earthPos.y);
+            ctx.lineTo(points[4].x, points[4].y);
+            ctx.closePath();
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+        }
+
         function getPosition(body) {
+            if (body.parent) {
+                const parent = celestialBodies[body.parent];
+                const parentPos = getPosition(parent);
+                const angle = body.angle + rotation.y;
+                return {
+                    x: parentPos.x + Math.cos(angle) * body.distance * zoom,
+                    y: parentPos.y + Math.sin(angle) * body.distance * zoom
+                };
+            }
             const angle = body.angle + rotation.y;
             return {
                 x: centerX + Math.cos(angle) * body.distance * zoom,
@@ -691,36 +1583,29 @@
         }
 
         function findObjectAtPoint(x, y) {
-            // Check Sun first (it's at center)
-            const sun = celestialBodies.sun;
-            const sunPos = getPosition(sun);
-            const sunDistance = Math.sqrt(
-                Math.pow(x - sunPos.x, 2) + Math.pow(y - sunPos.y, 2)
-            );
+            const bodies = Object.entries(celestialBodies);
             
-            if (sunDistance <= sun.radius * zoom * 1.5) {
-                return 'sun';
-            }
+            bodies.sort((a, b) => a[1].radius - b[1].radius);
             
-            // Check other planets
-            const planets = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn'];
-            for (const planetName of planets) {
-                const body = celestialBodies[planetName];
+            for (const [name, body] of bodies) {
                 const pos = getPosition(body);
                 const distance = Math.sqrt(
                     Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2)
                 );
                 
-                if (distance <= body.radius * zoom * 1.2) {
-                    return planetName;
+                const clickRadius = body.radius * zoom * 1.5;
+                if (distance <= clickRadius) {
+                    return name;
                 }
             }
             
             return null;
         }
 
-        function updateInfoPanel(planetName) {
-            const body = celestialBodies[planetName];
+        function updateInfoPanel(bodyName) {
+            const body = celestialBodies[bodyName];
+            if (!body) return;
+            
             document.getElementById('objectName').textContent = body.name;
             document.getElementById('objectDescription').textContent = body.description;
             document.getElementById('distanceInfo').textContent = body.distanceText;
@@ -733,6 +1618,15 @@
             document.getElementById('travelInfo').textContent = body.travel;
             
             document.getElementById('infoPanel').classList.add('visible');
+            
+            document.querySelectorAll('.planet-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.body === bodyName) {
+                    item.classList.add('active');
+                }
+            });
+            
+            selectedObject = bodyName;
         }
 
         function render() {
@@ -743,39 +1637,49 @@
             
             drawBackground();
             
-            // Draw orbits
             Object.values(celestialBodies).forEach(body => {
-                if (body.distance > 0) {
+                if (body.distance > 0 && !body.parent) {
                     drawOrbit(body.distance, selectedObject && celestialBodies[selectedObject] === body);
                 }
             });
             
-            // Draw habitable zone
+            Object.values(celestialBodies).forEach(body => {
+                if (body.parent) {
+                    const parentPos = getPosition(celestialBodies[body.parent]);
+                    drawMoonOrbit(parentPos, body.distance, selectedObject && celestialBodies[selectedObject] === body);
+                }
+            });
+            
             if (showHabitable) {
                 drawHabitableZone();
             }
             
-            // Draw gravity wells
             if (showGravity) {
                 drawGravityWells();
             }
             
-            // Draw planets
+            if (showLagrange) {
+                drawLagrangePoints();
+            }
+            
+            const sun = celestialBodies.sun;
+            drawSphere(centerX, centerY, sun.radius, sun.color, true);
+            
             Object.entries(celestialBodies).forEach(([name, body]) => {
-                const pos = getPosition(body);
-                drawSphere(pos.x, pos.y, body.radius, body.color);
-                
-                // Highlight selected planet
-                if (selectedObject === name) {
-                    ctx.strokeStyle = '#4a90e2';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.arc(pos.x, pos.y, (body.radius + 5) * zoom, 0, Math.PI * 2);
-                    ctx.stroke();
+                if (name !== 'sun') {
+                    const pos = getPosition(body);
+                    drawSphere(pos.x, pos.y, body.radius, body.color);
+                    
+                    if (selectedObject === name) {
+                        ctx.strokeStyle = '#4a90e2';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(pos.x, pos.y, (body.radius + 5) * zoom, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
                 }
             });
             
-            // Draw measurement line if in measure mode
             if (measureMode && measurePoint1) {
                 const pos1 = getPosition(celestialBodies[measurePoint1]);
                 ctx.strokeStyle = '#8b5cf6';
@@ -800,12 +1704,12 @@
 
         function animate() {
             if (!isPaused) {
-                time += 0.0005 * timeSpeed;
+                time += 0.0001 * timeSpeed;
                 
-                // Update planet positions
                 Object.values(celestialBodies).forEach(body => {
                     if (body.period > 0) {
-                        body.angle = time * (2 * Math.PI / body.period) * 100;
+                        const speedMultiplier = body.parent ? 0.05 : 0.5;
+                        body.angle = time * (2 * Math.PI / body.period) * 100 * speedMultiplier;
                     }
                 });
             }
@@ -827,7 +1731,6 @@
                     measurePoint1 = clickedObj;
                 } else if (!measurePoint2) {
                     measurePoint2 = clickedObj;
-                    // Calculate and display distance
                     const body1 = celestialBodies[measurePoint1];
                     const body2 = celestialBodies[measurePoint2];
                     const distance = Math.abs(body2.distance - body1.distance);
@@ -842,7 +1745,6 @@
                     document.getElementById('measureDisplay').classList.remove('visible');
                 }
             } else if (clickedObj) {
-                selectedObject = clickedObj;
                 updateInfoPanel(clickedObj);
             } else {
                 isDragging = true;
@@ -857,7 +1759,6 @@
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
             
-            // Update cursor
             const hoveredObj = findObjectAtPoint(mouseX, mouseY);
             canvas.style.cursor = hoveredObj ? 'pointer' : (isDragging ? 'grabbing' : 'grab');
             
@@ -907,14 +1808,15 @@
             zoom = 1.0;
             selectedObject = null;
             document.getElementById('infoPanel').classList.remove('visible');
+            document.querySelectorAll('.planet-item').forEach(item => {
+                item.classList.remove('active');
+            });
             Object.values(celestialBodies).forEach(body => {
                 body.angle = 0;
             });
         });
 
         // Tool buttons
-        const toolButtons = ['measureBtn', 'lagrangeBtn', 'habitableBtn', 'gravityBtn'];
-        
         document.getElementById('measureBtn').addEventListener('click', () => {
             measureMode = !measureMode;
             document.getElementById('measureBtn').classList.toggle('active', measureMode);
@@ -939,16 +1841,46 @@
         document.getElementById('lagrangeBtn').addEventListener('click', () => {
             showLagrange = !showLagrange;
             document.getElementById('lagrangeBtn').classList.toggle('active', showLagrange);
-            alert('Lagrange Points visualization coming soon!');
         });
 
         document.getElementById('quizBtn').addEventListener('click', () => {
-            alert('Quiz feature coming soon!');
+            document.getElementById('quizModal').classList.add('visible');
+            if (quizCompleted) {
+                resetQuiz();
+            } else {
+                loadQuizQuestion();
+            }
         });
+
+        document.getElementById('closeQuiz').addEventListener('click', () => {
+            document.getElementById('quizModal').classList.remove('visible');
+        });
+
+        document.getElementById('closeQuizComplete').addEventListener('click', () => {
+            document.getElementById('quizModal').classList.remove('visible');
+        });
+
+        document.getElementById('nextQuiz').addEventListener('click', () => {
+            currentQuestionIndex++;
+            loadQuizQuestion();
+        });
+
+        document.getElementById('restartQuiz').addEventListener('click', resetQuiz);
 
         document.getElementById('closeInfo').addEventListener('click', () => {
             selectedObject = null;
             document.getElementById('infoPanel').classList.remove('visible');
+            document.querySelectorAll('.planet-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        });
+
+        // Sidebar planet selection
+        document.querySelectorAll('.planet-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const bodyName = item.dataset.body;
+                updateInfoPanel(bodyName);
+            });
         });
 
         // Initialize
