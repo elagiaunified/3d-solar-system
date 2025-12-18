@@ -32,7 +32,7 @@
  <body class="h-full">
   <div id="app" class="h-full w-full relative overflow-hidden">
    <canvas id="spaceCanvas" class="absolute inset-0 w-full h-full"></canvas>
-   <div class="absolute inset-0"><!-- Header -->
+   <div class="absolute inset-0 pointer-events-none"><!-- Header -->
     <div class="p-6 pointer-events-auto">
      <h1 id="titleText" class="text-4xl font-bold mb-2">Solar System Explorer</h1>
      <p id="subtitleText" class="text-xl opacity-90">Complete Interactive 3D Solar System with Physics &amp; Educational Tools</p>
@@ -140,394 +140,807 @@
    </div>
   </div>
   <script>
-  const canvas = document.getElementById('spaceCanvas');
-const ctx = canvas.getContext('2d');
+    const defaultConfig = {
+      background_color: "#0A0E27",
+      surface_color: "#1A1F3A",
+      text_color: "#E8E8F0",
+      primary_action_color: "#4A90E2",
+      secondary_action_color: "#8B5CF6",
+      font_family: "system-ui, -apple-system, sans-serif",
+      font_size: 16,
+      title_text: "Solar System Explorer",
+      subtitle_text: "Complete Interactive 3D Solar System with Physics & Educational Tools"
+    };
 
-// Set initial dimensions and variables
-let width = window.innerWidth;
-let height = window.innerHeight;
-let centerX = width / 2;
-let centerY = height / 2;
-let rotation = { x: 0, y: 0 };
-let zoom = 1.5; // Increased initial zoom so planets are visible
-let isDragging = false;
-let lastMouseX = 0;
-let lastMouseY = 0;
-let isPaused = false;
-let timeSpeed = 1;
-let time = 0;
-let selectedObject = null;
+    let config = {};
 
-// Tool states
-let showLagrange = false;
-let showHabitable = false;
-let showGravity = false;
-let measureMode = false;
-let measurePoint1 = null;
-let measurePoint2 = null;
-
-// Quiz state
-let currentQuestion = 0;
-let quizScore = 0;
-
-// Set canvas size
-canvas.width = width;
-canvas.height = height;
-
-// Simple celestial bodies with basic properties
-const celestialBodies = {
-  sun: {
-    name: "Sun", radius: 40, color: "#FFD700", distance: 0, period: 0, angle: 0,
-    description: "The star at the center of our solar system.",
-    distanceText: "0 AU", periodText: "N/A", velocity: "N/A",
-    diameter: "1,391,000 km", mass: "1.989 × 10³⁰ kg", gravity: "274 m/s²"
-  },
-  mercury: {
-    name: "Mercury", radius: 8, color: "#B8B8B8", distance: 100, period: 88, angle: 0,
-    description: "Smallest planet and closest to the Sun.",
-    distanceText: "0.39 AU (58M km)", periodText: "88 days", velocity: "47.4 km/s",
-    diameter: "4,879 km", mass: "3.3 × 10²³ kg", gravity: "3.7 m/s²"
-  },
-  venus: {
-    name: "Venus", radius: 15, color: "#FFC649", distance: 150, period: 225, angle: 1,
-    description: "Hottest planet with a thick toxic atmosphere.",
-    distanceText: "0.72 AU (108M km)", periodText: "225 days", velocity: "35.0 km/s",
-    diameter: "12,104 km", mass: "4.87 × 10²⁴ kg", gravity: "8.9 m/s²"
-  },
-  earth: {
-    name: "Earth", radius: 16, color: "#6B9BD1", distance: 200, period: 365, angle: 2,
-    description: "Our home planet. Only known world with life.",
-    distanceText: "1.0 AU (150M km)", periodText: "365.25 days", velocity: "29.8 km/s",
-    diameter: "12,742 km", mass: "5.97 × 10²⁴ kg", gravity: "9.8 m/s²"
-  },
-  mars: {
-    name: "Mars", radius: 12, color: "#E27B58", distance: 260, period: 687, angle: 3,
-    description: "The Red Planet with the largest volcano in the solar system.",
-    distanceText: "1.52 AU (228M km)", periodText: "687 days", velocity: "24.1 km/s",
-    diameter: "6,779 km", mass: "6.42 × 10²³ kg", gravity: "3.7 m/s²"
-  },
-  jupiter: {
-    name: "Jupiter", radius: 35, color: "#E8B882", distance: 340, period: 4333, angle: 4,
-    description: "Largest planet with a mass greater than all other planets combined.",
-    distanceText: "5.2 AU (778M km)", periodText: "11.9 years", velocity: "13.1 km/s",
-    diameter: "139,820 km", mass: "1.90 × 10²⁷ kg", gravity: "24.8 m/s²"
-  },
-  saturn: {
-    name: "Saturn", radius: 30, color: "#F4E8C1", distance: 420, period: 10759, angle: 5,
-    description: "Famous for its spectacular ring system.",
-    distanceText: "9.5 AU (1.4B km)", periodText: "29.5 years", velocity: "9.7 km/s",
-    diameter: "116,460 km", mass: "5.68 × 10²⁶ kg", gravity: "10.4 m/s²"
-  }
-};
-
-function resizeCanvas() {
-  width = canvas.width = window.innerWidth;
-  height = canvas.height = window.innerHeight;
-  centerX = width / 2;
-  centerY = height / 2;
-}
-
-function drawPlanet(x, y, radius, color) {
-  // Draw glow effect
-  const gradient = ctx.createRadialGradient(
-    x, y, 0,
-    x, y, radius * zoom
-  );
-  gradient.addColorStop(0, color);
-  gradient.addColorStop(1, color + "80");
-  
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(x, y, radius * zoom, 0, Math.PI * 2);
-  ctx.fill();
-  
-  // Draw border
-  ctx.strokeStyle = "#FFFFFF";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.arc(x, y, radius * zoom, 0, Math.PI * 2);
-  ctx.stroke();
-}
-
-function drawOrbit(distance) {
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-  ctx.lineWidth = 1;
-  ctx.setLineDash([5, 5]);
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, distance * zoom, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-function getPosition(body) {
-  const angle = body.angle + rotation.y;
-  return {
-    x: centerX + Math.cos(angle) * body.distance * zoom,
-    y: centerY + Math.sin(angle) * body.distance * zoom
-  };
-}
-
-function drawGravityWells() {
-  Object.entries(celestialBodies).forEach(([key, body]) => {
-    const pos = getPosition(body);
-    const gravityRadius = body.radius * 3;
+    const canvas = document.getElementById('spaceCanvas');
+    const ctx = canvas.getContext('2d');
     
-    const gradient = ctx.createRadialGradient(
-      pos.x, pos.y, body.radius * zoom,
-      pos.x, pos.y, gravityRadius * zoom
-    );
-    gradient.addColorStop(0, body.color + "40");
-    gradient.addColorStop(1, body.color + "00");
+    let width, height, centerX, centerY;
+    let rotation = { x: 0, y: 0 };
+    let zoom = 0.8;
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    let isPaused = false;
+    let timeSpeed = 1;
+    let time = 0;
+    let selectedObject = null;
     
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, gravityRadius * zoom, 0, Math.PI * 2);
-    ctx.fill();
-  });
-}
+    // Tool states
+    let showLagrange = false;
+    let showHabitable = false;
+    let showGravity = false;
+    let measureMode = false;
+    let measurePoint1 = null;
+    let measurePoint2 = null;
+    
+    // Quiz state
+    let quizActive = false;
+    let currentQuestion = 0;
+    let quizScore = 0;
 
-function drawHabitableZone() {
-  const inner = 180 * zoom;
-  const outer = 220 * zoom;
-  
-  const gradient = ctx.createRadialGradient(centerX, centerY, inner, centerX, centerY, outer);
-  gradient.addColorStop(0, 'rgba(50, 205, 50, 0.1)');
-  gradient.addColorStop(1, 'rgba(50, 205, 50, 0)');
-  
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, outer, 0, Math.PI * 2);
-  ctx.arc(centerX, centerY, inner, 0, Math.PI * 2, true);
-  ctx.fill();
-  
-  ctx.strokeStyle = 'rgba(50, 205, 50, 0.6)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([10, 5]);
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, inner, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, outer, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
+    const celestialBodies = {
+      sun: {
+        name: "Sun", radius: 30, color: ["#FFF9E6", "#FFD700"], distance: 0, period: 0, angle: 0,
+        description: "The star at the center of our solar system, containing 99.86% of the system's mass.",
+        distanceText: "0 AU", periodText: "N/A", velocity: "N/A",
+        diameter: "1,391,000 km", mass: "1.989 × 10³⁰ kg", gravity: "274 m/s²",
+        composition: "73% Hydrogen, 25% Helium, 2% heavier elements",
+        travel: "N/A - Too hot to approach!"
+      },
+      mercury: {
+        name: "Mercury", radius: 6, color: ["#B8B8B8", "#8A8A8A"], distance: 80, period: 88, angle: 0,
+        description: "Smallest planet and closest to the Sun. No atmosphere and extreme temperature variations.",
+        distanceText: "0.39 AU (58M km)", periodText: "88 days", velocity: "47.4 km/s",
+        diameter: "4,879 km", mass: "3.3 × 10²³ kg", gravity: "3.7 m/s²",
+        composition: "Rocky planet - Iron core (70%), Silicate mantle",
+        travel: "~6-7 months with current technology"
+      },
+      venus: {
+        name: "Venus", radius: 11, color: ["#FFC649", "#E8A030"], distance: 120, period: 225, angle: 1,
+        description: "Hottest planet with a thick toxic atmosphere. Rotates backwards compared to most planets.",
+        distanceText: "0.72 AU (108M km)", periodText: "225 days", velocity: "35.0 km/s",
+        diameter: "12,104 km", mass: "4.87 × 10²⁴ kg", gravity: "8.9 m/s²",
+        composition: "Rocky - CO₂ atmosphere (96.5%), Sulfuric acid clouds",
+        travel: "~5 months with current technology"
+      },
+      earth: {
+        name: "Earth", radius: 12, color: ["#6B9BD1", "#2E5C8A"], distance: 180, period: 365, angle: 2,
+        description: "Our home planet. Only known world with life. 71% covered by water with nitrogen-oxygen atmosphere.",
+        distanceText: "1.0 AU (150M km)", periodText: "365.25 days", velocity: "29.8 km/s",
+        diameter: "12,742 km", mass: "5.97 × 10²⁴ kg", gravity: "9.8 m/s²",
+        composition: "Rocky - N₂/O₂ atmosphere, liquid water, iron/nickel core",
+        travel: "You're already here! 🌍"
+      },
+      moon: {
+        name: "Moon", radius: 4, color: ["#C8C8C8", "#8A8A8A"], distance: 25, period: 27.3, angle: 0, parent: "earth",
+        description: "Earth's only natural satellite. Influences tides and stabilizes Earth's axial tilt.",
+        distanceText: "384,400 km from Earth", periodText: "27.3 days", velocity: "1.0 km/s",
+        diameter: "3,474 km", mass: "7.35 × 10²² kg", gravity: "1.6 m/s²",
+        composition: "Rocky - No atmosphere, ancient volcanic maria",
+        travel: "~3 days (Apollo missions took 3 days)"
+      },
+      mars: {
+        name: "Mars", radius: 9, color: ["#E27B58", "#C1440E"], distance: 240, period: 687, angle: 3,
+        description: "The Red Planet with the largest volcano and canyon in the solar system. Prime candidate for colonization.",
+        distanceText: "1.52 AU (228M km)", periodText: "687 days", velocity: "24.1 km/s",
+        diameter: "6,779 km", mass: "6.42 × 10²³ kg", gravity: "3.7 m/s²",
+        composition: "Rocky - Thin CO₂ atmosphere, iron oxide surface, polar ice caps",
+        travel: "~7-9 months with current technology"
+      },
+      jupiter: {
+        name: "Jupiter", radius: 24, color: ["#E8B882", "#C4935B"], distance: 350, period: 4333, angle: 4,
+        description: "Largest planet with a mass greater than all other planets combined. Famous Great Red Spot storm.",
+        distanceText: "5.2 AU (778M km)", periodText: "11.9 years", velocity: "13.1 km/s",
+        diameter: "139,820 km", mass: "1.90 × 10²⁷ kg", gravity: "24.8 m/s²",
+        composition: "Gas giant - 90% H₂, 10% He. No solid surface",
+        travel: "~13 months to 2 years (Voyager: 18 months)"
+      },
+      saturn: {
+        name: "Saturn", radius: 20, color: ["#F4E8C1", "#D4C18A"], distance: 480, period: 10759, angle: 5,
+        description: "Famous for its spectacular ring system made of ice and rock. Least dense planet - would float in water!",
+        distanceText: "9.5 AU (1.4B km)", periodText: "29.5 years", velocity: "9.7 km/s",
+        diameter: "116,460 km", mass: "5.68 × 10²⁶ kg", gravity: "10.4 m/s²",
+        composition: "Gas giant - H₂/He with magnificent ring system",
+        travel: "~3-4 years (Cassini: 7 years)"
+      },
+      uranus: {
+        name: "Uranus", radius: 16, color: ["#A4D4E6", "#7FB3C8"], distance: 580, period: 30687, angle: 0,
+        description: "Ice giant that rotates on its side! Coldest planetary atmosphere in the solar system.",
+        distanceText: "19.2 AU (2.9B km)", periodText: "84 years", velocity: "6.8 km/s",
+        diameter: "50,724 km", mass: "8.68 × 10²⁵ kg", gravity: "8.9 m/s²",
+        composition: "Ice giant - H₂/He/CH₄ atmosphere, icy mantle",
+        travel: "~8-9 years (Voyager 2: 8.5 years)"
+      },
+      neptune: {
+        name: "Neptune", radius: 15, color: ["#5E7FCF", "#4A5FAD"], distance: 660, period: 60190, angle: 1.5,
+        description: "Furthest planet with the strongest winds in the solar system, up to 2,100 km/h!",
+        distanceText: "30.1 AU (4.5B km)", periodText: "165 years", velocity: "5.4 km/s",
+        diameter: "49,244 km", mass: "1.02 × 10²⁶ kg", gravity: "11.2 m/s²",
+        composition: "Ice giant - H₂/He/CH₄ atmosphere, supersonic winds",
+        travel: "~12 years (Voyager 2: 12 years)"
+      }
+    };
 
-function render() {
-  // Clear canvas with dark blue background
-  ctx.fillStyle = "#0A0E27";
-  ctx.fillRect(0, 0, width, height);
-  
-  // Draw orbits
-  Object.values(celestialBodies).forEach(body => {
-    if (body.distance > 0) {
-      drawOrbit(body.distance);
+    const quizQuestions = [
+      {
+        q: "Which planet has the strongest gravity?",
+        options: ["Earth", "Jupiter", "Saturn", "Neptune"],
+        correct: 1,
+        explanation: "Jupiter has the strongest gravity at 24.8 m/s², over 2.5 times Earth's gravity!"
+      },
+      {
+        q: "Which planet could theoretically float in water?",
+        options: ["Mars", "Saturn", "Uranus", "Venus"],
+        correct: 1,
+        explanation: "Saturn is the least dense planet and would float if you could find a bathtub big enough!"
+      },
+      {
+        q: "How long does it take light from the Sun to reach Earth?",
+        options: ["8 seconds", "8 minutes", "8 hours", "8 days"],
+        correct: 1,
+        explanation: "Light takes about 8 minutes and 20 seconds to travel from the Sun to Earth (1 AU)."
+      },
+      {
+        q: "Which planet has the longest day (rotation period)?",
+        options: ["Mercury", "Venus", "Jupiter", "Neptune"],
+        correct: 1,
+        explanation: "Venus takes 243 Earth days to rotate once, longer than its year of 225 days!"
+      },
+      {
+        q: "What is the habitable zone also known as?",
+        options: ["Safe zone", "Goldilocks zone", "Life zone", "Green zone"],
+        correct: 1,
+        explanation: "The habitable zone is called the 'Goldilocks zone' - not too hot, not too cold, just right for liquid water!"
+      }
+    ];
+
+    function resizeCanvas() {
+      width = canvas.width = canvas.offsetWidth;
+      height = canvas.height = canvas.offsetHeight;
+      centerX = width / 2;
+      centerY = height / 2;
     }
-  });
-  
-  // Draw habitable zone if active
-  if (showHabitable) {
-    drawHabitableZone();
-  }
-  
-  // Draw gravity wells if active
-  if (showGravity) {
-    drawGravityWells();
-  }
-  
-  // Draw planets
-  Object.entries(celestialBodies).forEach(([key, body]) => {
-    const pos = getPosition(body);
-    drawPlanet(pos.x, pos.y, body.radius, body.color);
-    
-    // Highlight selected planet
-    if (key === selectedObject) {
-      ctx.strokeStyle = "#4A90E2";
-      ctx.lineWidth = 3;
+
+    function drawSphere(x, y, radius, colors, showGlow = true) {
+      if (showGlow) {
+        const gradient = ctx.createRadialGradient(
+          x - radius * 0.3, y - radius * 0.3, 0,
+          x, y, radius
+        );
+        gradient.addColorStop(0, colors[0]);
+        gradient.addColorStop(1, colors[1]);
+        ctx.fillStyle = gradient;
+      } else {
+        ctx.fillStyle = colors[1];
+      }
+      
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, (body.radius + 5) * zoom, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(x, y, radius * zoom, 0, Math.PI * 2);
+      ctx.fill();
+      
+      if (showGlow) {
+        ctx.strokeStyle = colors[0] + "40";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
     }
-  });
-}
 
-function animate() {
-  if (!isPaused) {
-    time += 0.0005 * timeSpeed;
-    
-    // Update planet positions
-    Object.values(celestialBodies).forEach(body => {
-      if (body.period > 0) {
-        body.angle = time * (2 * Math.PI / body.period) * 50;
+    function drawOrbit(distance, highlight = false) {
+      const textColor = config.text_color || defaultConfig.text_color;
+      ctx.strokeStyle = highlight ? textColor + "60" : textColor + "20";
+      ctx.lineWidth = highlight ? 2 : 1;
+      ctx.setLineDash(highlight ? [10, 5] : [5, 5]);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, distance * zoom, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawHabitableZone() {
+      const inner = 140 * zoom;
+      const outer = 220 * zoom;
+      
+      const gradient = ctx.createRadialGradient(centerX, centerY, inner, centerX, centerY, outer);
+      gradient.addColorStop(0, 'rgba(50, 205, 50, 0.1)');
+      gradient.addColorStop(0.5, 'rgba(50, 205, 50, 0.2)');
+      gradient.addColorStop(1, 'rgba(50, 205, 50, 0.1)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, outer, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, inner, 0, Math.PI * 2, true);
+      ctx.fill();
+      
+      ctx.strokeStyle = 'rgba(50, 205, 50, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 5]);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, inner, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, outer, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      ctx.fillStyle = 'rgba(50, 205, 50, 0.9)';
+      ctx.font = '12px system-ui';
+      ctx.fillText('Habitable Zone', centerX - 50, centerY - outer - 10);
+    }
+
+    function drawGravityWells() {
+      Object.entries(celestialBodies).forEach(([key, body]) => {
+        if (body.name === 'Moon') return;
+        
+        const pos = getPosition(body);
+        const gravityRadius = Math.log(body.radius + 1) * 30;
+        
+        const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, gravityRadius * zoom);
+        gradient.addColorStop(0, body.color[1] + '40');
+        gradient.addColorStop(0.5, body.color[1] + '20');
+        gradient.addColorStop(1, body.color[1] + '00');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, gravityRadius * zoom, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawLagrangePoints() {
+      const earth = celestialBodies.earth;
+      const earthPos = getPosition(earth);
+      const sunPos = { x: centerX, y: centerY };
+      
+      const dx = earthPos.x - sunPos.x;
+      const dy = earthPos.y - sunPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+      
+      const l1Dist = dist * 0.99;
+      const l2Dist = dist * 1.01;
+      const l3Dist = dist;
+      
+      const points = [
+        { x: sunPos.x + Math.cos(angle) * l1Dist, y: sunPos.y + Math.sin(angle) * l1Dist, label: 'L1' },
+        { x: sunPos.x + Math.cos(angle) * l2Dist, y: sunPos.y + Math.sin(angle) * l2Dist, label: 'L2' },
+        { x: sunPos.x - Math.cos(angle) * l3Dist, y: sunPos.y - Math.sin(angle) * l3Dist, label: 'L3' },
+        { x: sunPos.x + Math.cos(angle + Math.PI/3) * dist, y: sunPos.y + Math.sin(angle + Math.PI/3) * dist, label: 'L4' },
+        { x: sunPos.x + Math.cos(angle - Math.PI/3) * dist, y: sunPos.y + Math.sin(angle - Math.PI/3) * dist, label: 'L5' }
+      ];
+      
+      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+      points.forEach(point => {
+        ctx.fillStyle = primaryColor;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = config.text_color || defaultConfig.text_color;
+        ctx.font = 'bold 11px system-ui';
+        ctx.fillText(point.label, point.x + 8, point.y - 8);
+      });
+    }
+
+    function getPosition(body) {
+      if (body.parent) {
+        const parent = celestialBodies[body.parent];
+        const parentPos = getPosition(parent);
+        const angle = body.angle + rotation.y;
+        return {
+          x: parentPos.x + Math.cos(angle) * body.distance * zoom,
+          y: parentPos.y + Math.sin(angle) * body.distance * zoom
+        };
+      }
+      const angle = body.angle + rotation.y;
+      return {
+        x: centerX + Math.cos(angle) * body.distance * zoom,
+        y: centerY + Math.sin(angle) * body.distance * zoom
+      };
+    }
+
+    function isPointInCircle(px, py, cx, cy, radius) {
+      const dx = px - cx;
+      const dy = py - cy;
+      return dx * dx + dy * dy <= radius * radius;
+    }
+
+    function findObjectAtPoint(x, y) {
+      // Check all bodies including sun
+      const bodiesToCheck = [
+        ['sun', celestialBodies.sun],
+        ['mercury', celestialBodies.mercury],
+        ['venus', celestialBodies.venus],
+        ['earth', celestialBodies.earth],
+        ['moon', celestialBodies.moon],
+        ['mars', celestialBodies.mars],
+        ['jupiter', celestialBodies.jupiter],
+        ['saturn', celestialBodies.saturn],
+        ['uranus', celestialBodies.uranus],
+        ['neptune', celestialBodies.neptune]
+      ];
+      
+      // Check smaller/closer objects first (reverse order)
+      for (let i = bodiesToCheck.length - 1; i >= 0; i--) {
+        const [key, body] = bodiesToCheck[i];
+        const pos = getPosition(body);
+        // Use larger click radius for better selection
+        const clickRadius = Math.max(body.radius * zoom, 12);
+        if (isPointInCircle(x, y, pos.x, pos.y, clickRadius)) {
+          return key;
+        }
+      }
+      return null;
+    }
+
+    function updateSelection(key) {
+      if (key !== selectedObject) {
+        selectedObject = key;
+        const panel = document.getElementById('infoPanel');
+        
+        if (selectedObject) {
+          const body = celestialBodies[selectedObject];
+          document.getElementById('objectName').textContent = body.name;
+          document.getElementById('objectDescription').textContent = body.description;
+          document.getElementById('distanceInfo').textContent = body.distanceText;
+          document.getElementById('periodInfo').textContent = body.periodText;
+          document.getElementById('velocityInfo').textContent = body.velocity;
+          document.getElementById('sizeInfo').textContent = body.diameter;
+          document.getElementById('massInfo').textContent = body.mass;
+          document.getElementById('gravityInfo').textContent = body.gravity;
+          document.getElementById('compositionInfo').textContent = body.composition;
+          document.getElementById('travelInfo').textContent = body.travel;
+          panel.style.opacity = '1';
+        } else {
+          panel.style.opacity = '0';
+        }
+      }
+    }
+
+    function calculateDistance(obj1, obj2) {
+      const pos1 = getPosition(celestialBodies[obj1]);
+      const pos2 = getPosition(celestialBodies[obj2]);
+      const dx = pos2.x - pos1.x;
+      const dy = pos2.y - pos1.y;
+      const pixelDist = Math.sqrt(dx * dx + dy * dy);
+      
+      const dist1 = celestialBodies[obj1].distance;
+      const dist2 = celestialBodies[obj2].distance;
+      const actualDist = Math.abs(dist2 - dist1);
+      const au = actualDist / 180;
+      
+      return { pixels: pixelDist, au: au.toFixed(2), km: (au * 150).toFixed(0) };
+    }
+
+    function render() {
+      const bgColor = config.background_color || defaultConfig.background_color;
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, width, height);
+      
+      if (showHabitable) {
+        drawHabitableZone();
+      }
+      
+      if (showGravity) {
+        drawGravityWells();
+      }
+      
+      Object.entries(celestialBodies).forEach(([key, body]) => {
+        if (body.distance > 0 && !body.parent) {
+          drawOrbit(body.distance, key === selectedObject);
+        }
+      });
+      
+      if (celestialBodies.moon) {
+        const earthPos = getPosition(celestialBodies.earth);
+        ctx.strokeStyle = (config.text_color || defaultConfig.text_color) + "15";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.arc(earthPos.x, earthPos.y, celestialBodies.moon.distance * zoom, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      
+      if (showLagrange) {
+        drawLagrangePoints();
+      }
+      
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = "#FFD70080";
+      drawSphere(centerX, centerY, celestialBodies.sun.radius, celestialBodies.sun.color);
+      
+      Object.entries(celestialBodies).forEach(([key, body]) => {
+        if (body.name !== 'Sun') {
+          const pos = getPosition(body);
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = body.color[1] + "40";
+          drawSphere(pos.x, pos.y, body.radius, body.color);
+          
+          if (key === selectedObject) {
+            ctx.strokeStyle = config.primary_action_color || defaultConfig.primary_action_color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, (body.radius + 3) * zoom, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+      });
+      
+      if (measureMode && measurePoint1) {
+        const pos1 = getPosition(celestialBodies[measurePoint1]);
+        ctx.strokeStyle = config.secondary_action_color || defaultConfig.secondary_action_color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(pos1.x, pos1.y, 8, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        if (measurePoint2) {
+          const pos2 = getPosition(celestialBodies[measurePoint2]);
+          ctx.beginPath();
+          ctx.moveTo(pos1.x, pos1.y);
+          ctx.lineTo(pos2.x, pos2.y);
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.arc(pos2.x, pos2.y, 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+      
+      ctx.shadowBlur = 0;
+    }
+
+    function animate() {
+      if (!isPaused) {
+        time += 0.0005 * timeSpeed;
+        
+        Object.entries(celestialBodies).forEach(([key, body]) => {
+          if (body.period > 0 && !body.parent) {
+            body.angle = time * (2 * Math.PI / body.period) * 100;
+          } else if (body.parent) {
+            body.angle = time * (2 * Math.PI / body.period) * 100;
+          }
+        });
+      }
+      
+      render();
+      requestAnimationFrame(animate);
+    }
+
+    function loadQuizQuestion() {
+      if (currentQuestion >= quizQuestions.length) {
+        document.getElementById('quizContent').innerHTML = `
+          <div class="text-center">
+            <div class="text-4xl mb-4">🎉</div>
+            <div class="text-2xl font-bold mb-2">Quiz Complete!</div>
+            <div class="text-lg mb-4">Final Score: ${quizScore}/${quizQuestions.length}</div>
+            <button id="restartQuiz" class="px-6 py-3 rounded font-bold">Start New Quiz</button>
+          </div>
+        `;
+        
+        const restartBtn = document.getElementById('restartQuiz');
+        restartBtn.style.background = config.primary_action_color || defaultConfig.primary_action_color;
+        restartBtn.style.color = config.text_color || defaultConfig.text_color;
+        restartBtn.onclick = () => {
+          currentQuestion = 0;
+          quizScore = 0;
+          loadQuizQuestion();
+        };
+        return;
+      }
+      
+      const q = quizQuestions[currentQuestion];
+      document.getElementById('quizQuestion').textContent = q.q;
+      document.getElementById('quizScore').textContent = `${quizScore}/${quizQuestions.length}`;
+      document.getElementById('quizFeedback').style.display = 'none';
+      
+      const optionsDiv = document.getElementById('quizOptions');
+      optionsDiv.innerHTML = '';
+      
+      q.options.forEach((option, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = option;
+        btn.className = 'w-full px-4 py-3 rounded text-left font-semibold transition-all';
+        btn.style.background = config.surface_color || defaultConfig.surface_color;
+        btn.style.color = config.text_color || defaultConfig.text_color;
+        btn.style.border = '2px solid transparent';
+        
+        btn.onmouseenter = () => {
+          btn.style.borderColor = config.primary_action_color || defaultConfig.primary_action_color;
+        };
+        btn.onmouseleave = () => {
+          btn.style.borderColor = 'transparent';
+        };
+        
+        btn.onclick = () => {
+          const feedback = document.getElementById('quizFeedback');
+          if (idx === q.correct) {
+            feedback.style.background = 'rgba(50, 205, 50, 0.2)';
+            feedback.innerHTML = `<div class="font-bold mb-1">✓ Correct!</div><div>${q.explanation}</div>`;
+            quizScore++;
+            document.getElementById('quizScore').textContent = `${quizScore}/${quizQuestions.length}`;
+          } else {
+            feedback.style.background = 'rgba(220, 50, 50, 0.2)';
+            feedback.innerHTML = `<div class="font-bold mb-1">✗ Not quite!</div><div>${q.explanation}</div>`;
+          }
+          feedback.style.display = 'block';
+          
+          Array.from(optionsDiv.children).forEach(b => b.disabled = true);
+        };
+        
+        optionsDiv.appendChild(btn);
+      });
+      
+      const nextBtn = document.getElementById('nextQuiz');
+      nextBtn.style.background = config.primary_action_color || defaultConfig.primary_action_color;
+      nextBtn.style.color = config.text_color || defaultConfig.text_color;
+    }
+
+    // Event Listeners
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const clickedObj = findObjectAtPoint(mouseX, mouseY);
+      
+      if (measureMode && clickedObj) {
+        if (!measurePoint1) {
+          measurePoint1 = clickedObj;
+        } else if (!measurePoint2) {
+          measurePoint2 = clickedObj;
+          const dist = calculateDistance(measurePoint1, measurePoint2);
+          document.getElementById('measureValue').innerHTML = 
+            `${dist.au} AU<br><span style="font-size: 14px;">(${dist.km}M km)</span>`;
+          document.getElementById('measureDisplay').style.opacity = '1';
+        } else {
+          measurePoint1 = clickedObj;
+          measurePoint2 = null;
+          document.getElementById('measureDisplay').style.opacity = '0';
+        }
+      } else if (clickedObj) {
+        // Only select if we clicked on an object
+        updateSelection(clickedObj);
+        // Don't start dragging if we clicked an object
+      } else {
+        // Start dragging only if we didn't click an object
+        isDragging = true;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
       }
     });
-  }
-  
-  render();
-  requestAnimationFrame(animate);
-}
 
-// Event Listeners
-canvas.addEventListener('mousedown', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  
-  // Find clicked planet
-  let clickedPlanet = null;
-  let minDistance = Infinity;
-  
-  Object.entries(celestialBodies).forEach(([key, body]) => {
-    const pos = getPosition(body);
-    const distance = Math.sqrt(
-      Math.pow(mouseX - pos.x, 2) + 
-      Math.pow(mouseY - pos.y, 2)
-    );
-    
-    if (distance < body.radius * zoom + 10 && distance < minDistance) {
-      minDistance = distance;
-      clickedPlanet = key;
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Update cursor based on whether we're hovering over an object
+      const hoveredObj = findObjectAtPoint(mouseX, mouseY);
+      canvas.style.cursor = hoveredObj ? 'pointer' : (isDragging ? 'grabbing' : 'grab');
+      
+      if (isDragging) {
+        const deltaX = e.clientX - lastMouseX;
+        const deltaY = e.clientY - lastMouseY;
+        
+        rotation.y += deltaX * 0.01;
+        rotation.x += deltaY * 0.01;
+        
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      // More responsive zoom with better sensitivity
+      const zoomSpeed = 0.001;
+      const delta = e.deltaY * -zoomSpeed;
+      const newZoom = zoom * (1 + delta);
+      zoom = Math.max(0.2, Math.min(3, newZoom));
+    }, { passive: false });
+
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+      timeSpeed = parseFloat(e.target.value) / 10;
+      document.getElementById('speedDisplay').textContent = timeSpeed.toFixed(1) + 'x';
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      isPaused = !isPaused;
+      document.getElementById('pauseBtn').textContent = isPaused ? '▶️ Resume' : '⏸️ Pause';
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      time = 0;
+      rotation = { x: 0, y: 0 };
+      zoom = 0.8;
+      Object.entries(celestialBodies).forEach(([key, body]) => {
+        if (body.period > 0) body.angle = key === 'mercury' ? 0 : parseFloat(key.charCodeAt(0)) / 20;
+      });
+    });
+
+    document.getElementById('measureBtn').addEventListener('click', () => {
+      measureMode = !measureMode;
+      if (!measureMode) {
+        measurePoint1 = null;
+        measurePoint2 = null;
+        document.getElementById('measureDisplay').style.opacity = '0';
+      }
+      document.getElementById('measureBtn').style.background = measureMode ? 
+        (config.primary_action_color || defaultConfig.primary_action_color) : 
+        (config.surface_color || defaultConfig.surface_color);
+    });
+
+    document.getElementById('lagrangeBtn').addEventListener('click', () => {
+      showLagrange = !showLagrange;
+      document.getElementById('lagrangeBtn').style.background = showLagrange ? 
+        (config.primary_action_color || defaultConfig.primary_action_color) : 
+        (config.surface_color || defaultConfig.surface_color);
+    });
+
+    document.getElementById('habitableBtn').addEventListener('click', () => {
+      showHabitable = !showHabitable;
+      document.getElementById('habitableBtn').style.background = showHabitable ? 
+        (config.primary_action_color || defaultConfig.primary_action_color) : 
+        (config.surface_color || defaultConfig.surface_color);
+    });
+
+    document.getElementById('gravityBtn').addEventListener('click', () => {
+      showGravity = !showGravity;
+      document.getElementById('gravityBtn').style.background = showGravity ? 
+        (config.primary_action_color || defaultConfig.primary_action_color) : 
+        (config.surface_color || defaultConfig.surface_color);
+    });
+
+    document.getElementById('quizBtn').addEventListener('click', () => {
+      document.getElementById('quizModal').style.opacity = '1';
+      document.getElementById('quizModal').style.pointerEvents = 'auto';
+      if (currentQuestion === 0 && quizScore === 0) {
+        loadQuizQuestion();
+      }
+    });
+
+    document.getElementById('closeQuiz').addEventListener('click', () => {
+      document.getElementById('quizModal').style.opacity = '0';
+      document.getElementById('quizModal').style.pointerEvents = 'none';
+    });
+
+    document.getElementById('nextQuiz').addEventListener('click', () => {
+      currentQuestion++;
+      loadQuizQuestion();
+    });
+
+    document.getElementById('closeInfo').addEventListener('click', () => {
+      selectedObject = null;
+      document.getElementById('infoPanel').style.opacity = '0';
+    });
+
+    async function onConfigChange(newConfig) {
+      config = newConfig;
+      
+      const bgColor = config.background_color || defaultConfig.background_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+      const fontFamily = config.font_family || defaultConfig.font_family;
+      const fontSize = config.font_size || defaultConfig.font_size;
+      
+      document.body.style.background = bgColor;
+      document.body.style.color = textColor;
+      document.body.style.fontFamily = `${fontFamily}, system-ui, -apple-system, sans-serif`;
+      
+      const overlays = document.querySelectorAll('[style*="backdrop-filter"]');
+      overlays.forEach(el => {
+        el.style.background = surfaceColor + 'CC';
+        el.style.color = textColor;
+      });
+      
+      document.getElementById('titleText').textContent = config.title_text || defaultConfig.title_text;
+      document.getElementById('titleText').style.fontSize = `${fontSize * 2.5}px`;
+      
+      document.getElementById('subtitleText').textContent = config.subtitle_text || defaultConfig.subtitle_text;
+      document.getElementById('subtitleText').style.fontSize = `${fontSize * 1.25}px`;
+      
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(btn => {
+        if (!btn.id.includes('measure') && !btn.id.includes('lagrange') && 
+            !btn.id.includes('habitable') && !btn.id.includes('gravity')) {
+          btn.style.background = primaryColor;
+          btn.style.color = textColor;
+        }
+      });
     }
-  });
-  
-  if (clickedPlanet) {
-    selectedObject = clickedPlanet;
-    const body = celestialBodies[clickedPlanet];
-    
-    // Update info panel
-    document.getElementById('objectName').textContent = body.name;
-    document.getElementById('objectDescription').textContent = body.description;
-    document.getElementById('distanceInfo').textContent = body.distanceText;
-    document.getElementById('periodInfo').textContent = body.periodText;
-    document.getElementById('velocityInfo').textContent = body.velocity;
-    document.getElementById('sizeInfo').textContent = body.diameter;
-    document.getElementById('massInfo').textContent = body.mass;
-    document.getElementById('gravityInfo').textContent = body.gravity;
-    
-    document.getElementById('infoPanel').style.opacity = '1';
-  }
-  
-  // Start dragging
-  isDragging = true;
-  lastMouseX = e.clientX;
-  lastMouseY = e.clientY;
-  e.preventDefault();
-});
 
-canvas.addEventListener('mousemove', (e) => {
-  if (isDragging) {
-    const deltaX = e.clientX - lastMouseX;
-    const deltaY = e.clientY - lastMouseY;
-    
-    rotation.y += deltaX * 0.01;
-    rotation.x += deltaY * 0.01;
-    
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-  }
-});
-
-canvas.addEventListener('mouseup', () => {
-  isDragging = false;
-});
-
-canvas.addEventListener('mouseleave', () => {
-  isDragging = false;
-});
-
-canvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  zoom += e.deltaY * -0.001;
-  zoom = Math.max(0.3, Math.min(3, zoom));
-});
-
-// Control panel event listeners
-document.getElementById('speedSlider').addEventListener('input', (e) => {
-  timeSpeed = parseFloat(e.target.value) / 10;
-  document.getElementById('speedDisplay').textContent = timeSpeed.toFixed(1) + 'x';
-});
-
-document.getElementById('pauseBtn').addEventListener('click', () => {
-  isPaused = !isPaused;
-  document.getElementById('pauseBtn').textContent = isPaused ? '▶️ Resume' : '⏸️ Pause';
-});
-
-document.getElementById('resetBtn').addEventListener('click', () => {
-  time = 0;
-  rotation = { x: 0, y: 0 };
-  zoom = 1.5;
-  Object.entries(celestialBodies).forEach(([key, body]) => {
-    body.angle = 0;
-  });
-});
-
-// Tool buttons
-document.getElementById('gravityBtn').addEventListener('click', () => {
-  showGravity = !showGravity;
-  const btn = document.getElementById('gravityBtn');
-  btn.style.background = showGravity ? '#4A90E2' : '';
-  btn.style.color = showGravity ? 'white' : '';
-});
-
-document.getElementById('habitableBtn').addEventListener('click', () => {
-  showHabitable = !showHabitable;
-  const btn = document.getElementById('habitableBtn');
-  btn.style.background = showHabitable ? '#4A90E2' : '';
-  btn.style.color = showHabitable ? 'white' : '';
-});
-
-document.getElementById('lagrangeBtn').addEventListener('click', () => {
-  alert('Lagrange Points feature will be implemented soon!');
-});
-
-document.getElementById('measureBtn').addEventListener('click', () => {
-  alert('Distance Measurement feature will be implemented soon!');
-});
-
-document.getElementById('quizBtn').addEventListener('click', () => {
-  alert('Quiz feature will be implemented soon!');
-});
-
-// Close buttons
-document.getElementById('closeInfo').addEventListener('click', () => {
-  document.getElementById('infoPanel').style.opacity = '0';
-});
-
-// Initialize
-resizeCanvas();
-animate();
-
-// Handle window resize
-window.addEventListener('resize', resizeCanvas);
-
-// Apply initial styles
-document.addEventListener('DOMContentLoaded', () => {
-  // Set dark theme
-  document.body.style.backgroundColor = '#0A0E27';
-  document.body.style.color = '#E8E8F0';
-  
-  // Style control panels
-  const panels = document.querySelectorAll('[style*="backdrop-filter"]');
-  panels.forEach(panel => {
-    panel.style.backgroundColor = 'rgba(26, 31, 58, 0.9)';
-  });
-  
-  // Style buttons
-  const buttons = document.querySelectorAll('button');
-  buttons.forEach(btn => {
-    if (!btn.id.includes('measure') && !btn.id.includes('lagrange') && 
-        !btn.id.includes('habitable') && !btn.id.includes('gravity')) {
-      btn.style.backgroundColor = '#4A90E2';
-      btn.style.color = 'white';
-      btn.style.border = 'none';
-      btn.style.padding = '8px 12px';
-      btn.style.borderRadius = '4px';
-      btn.style.cursor = 'pointer';
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.background_color || defaultConfig.background_color,
+            set: (value) => {
+              config.background_color = value;
+              window.elementSdk.setConfig({ background_color: value });
+            }
+          },
+          {
+            get: () => config.surface_color || defaultConfig.surface_color,
+            set: (value) => {
+              config.surface_color = value;
+              window.elementSdk.setConfig({ surface_color: value });
+            }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => {
+              config.text_color = value;
+              window.elementSdk.setConfig({ text_color: value });
+            }
+          },
+          {
+            get: () => config.primary_action_color || defaultConfig.primary_action_color,
+            set: (value) => {
+              config.primary_action_color = value;
+              window.elementSdk.setConfig({ primary_action_color: value });
+            }
+          },
+          {
+            get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+            set: (value) => {
+              config.secondary_action_color = value;
+              window.elementSdk.setConfig({ secondary_action_color: value });
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => config.font_family || defaultConfig.font_family,
+          set: (value) => {
+            config.font_family = value;
+            window.elementSdk.setConfig({ font_family: value });
+          }
+        },
+        fontSizeable: {
+          get: () => config.font_size || defaultConfig.font_size,
+          set: (value) => {
+            config.font_size = value;
+            window.elementSdk.setConfig({ font_size: value });
+          }
+        }
+      };
     }
-  });
-  
-  // Style info panel
-  const infoPanel = document.getElementById('infoPanel');
-  infoPanel.style.backgroundColor = 'rgba(26, 31, 58, 0.9)';
-  infoPanel.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-});
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ["title_text", config.title_text || defaultConfig.title_text],
+        ["subtitle_text", config.subtitle_text || defaultConfig.subtitle_text]
+      ]);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+      
+      config = window.elementSdk.config;
+      onConfigChange(config);
+    } else {
+      config = defaultConfig;
+      onConfigChange(config);
+    }
+
+    animate();
   </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9afb1c9793fb9374',t:'MTc2NjAyMzY5OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
