@@ -8,6 +8,8 @@ An interactive 3D solar system simulation with physics, educational tools, and q
 
 ![Solar System Explorer Screenshot](https://via.placeholder.com/800x450.png?text=Solar+System+Explorer+Screenshot)
 
+## [Live Demo](https://elagiaunified.github.io/3d-solar-system/) 
+
 ## ✨ Features
 
 ### 🌌 Interactive Solar System
